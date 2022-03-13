@@ -1,0 +1,39 @@
+\hypertarget{classnlib_1_1Channel}{}\doxysection{nlib\+::Channel Class Reference}
+\label{classnlib_1_1Channel}\index{nlib::Channel@{nlib::Channel}}
+
+
+Defines a channel that each module can define and to which other modules can connect.  
+
+
+
+
+{\ttfamily \#include $<$nl\+\_\+modflow.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{group__modflow_gaca01cfddb1465abf052b174c11fb60ea}{Channel}} (Channel\+Id \mbox{\hyperlink{classnlib_1_1Channel_af9d2a48539532f3166bf0a0e8ef3a83f}{id}}, const std\+::string \&\mbox{\hyperlink{classnlib_1_1Channel_a7ad9af9c298f4f528e598d84297d7db0}{name}}, const std\+::type\+\_\+index \&type, const \mbox{\hyperlink{classnlib_1_1NlModule}{Nl\+Module}} $\ast$owner, bool is\+Sink=false)
+\begin{DoxyCompactList}\small\item\em Create a new channel given\+: \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classnlib_1_1Channel_a5530fedcf1111154bfa1122701f7275f}\label{classnlib_1_1Channel_a5530fedcf1111154bfa1122701f7275f}} 
+\mbox{\hyperlink{classnlib_1_1Channel_a5530fedcf1111154bfa1122701f7275f}{Channel}} (const \mbox{\hyperlink{classnlib_1_1Channel}{Channel}} \&)=default
+\begin{DoxyCompactList}\small\item\em Copy constructor. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classnlib_1_1Channel_af9d2a48539532f3166bf0a0e8ef3a83f}\label{classnlib_1_1Channel_af9d2a48539532f3166bf0a0e8ef3a83f}} 
+Channel\+Id \mbox{\hyperlink{classnlib_1_1Channel_af9d2a48539532f3166bf0a0e8ef3a83f}{id}} () const
+\begin{DoxyCompactList}\small\item\em Get unique identifier of the channel. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classnlib_1_1Channel_a7ad9af9c298f4f528e598d84297d7db0}\label{classnlib_1_1Channel_a7ad9af9c298f4f528e598d84297d7db0}} 
+const std\+::string \& \mbox{\hyperlink{classnlib_1_1Channel_a7ad9af9c298f4f528e598d84297d7db0}{name}} () const
+\begin{DoxyCompactList}\small\item\em Get name of the channel. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classnlib_1_1Channel_a9c39fcb7181844a8e18ae2b10b28da0c}\label{classnlib_1_1Channel_a9c39fcb7181844a8e18ae2b10b28da0c}} 
+{\footnotesize template$<$typename T $>$ }\\bool \mbox{\hyperlink{classnlib_1_1Channel_a9c39fcb7181844a8e18ae2b10b28da0c}{check\+Type}} () const
+\begin{DoxyCompactList}\small\item\em Check whether supplied type is compatible with \mbox{\hyperlink{classnlib_1_1Channel}{Channel}} type. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classnlib_1_1Channel_aeee59ae18907c7770991b10a21333aeb}\label{classnlib_1_1Channel_aeee59ae18907c7770991b10a21333aeb}} 
+bool \mbox{\hyperlink{classnlib_1_1Channel_aeee59ae18907c7770991b10a21333aeb}{check\+Ownership}} (const \mbox{\hyperlink{classnlib_1_1NlModule}{Nl\+Module}} $\ast$caller) const
+\begin{DoxyCompactList}\small\item\em Check whether caller is actually the owner of the channel. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Defines a channel that each module can define and to which other modules can connect. 
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nl__modflow_8h}{nl\+\_\+modflow.\+h}}\end{DoxyCompactItemize}

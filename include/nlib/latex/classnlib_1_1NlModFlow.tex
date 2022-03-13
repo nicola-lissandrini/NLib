@@ -1,0 +1,79 @@
+\hypertarget{classnlib_1_1NlModFlow}{}\doxysection{nlib\+::Nl\+Mod\+Flow Class Reference}
+\label{classnlib_1_1NlModFlow}\index{nlib::NlModFlow@{nlib::NlModFlow}}
+
+
+The \mbox{\hyperlink{classnlib_1_1NlModFlow}{Nl\+Mod\+Flow}} class.  
+
+
+
+
+{\ttfamily \#include $<$nl\+\_\+modflow.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_a76518c422b38446eb9e4ff57368d4197}\label{classnlib_1_1NlModFlow_a76518c422b38446eb9e4ff57368d4197}} 
+{\footnotesize template$<$class Derived\+Sources , class Derived\+Sinks $>$ }\\void {\bfseries init} (const \mbox{\hyperlink{classnlib_1_1NlParams}{Nl\+Params}} \&nl\+Params)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_a95b382fa092172dab38cde5fd6961a92}\label{classnlib_1_1NlModFlow_a95b382fa092172dab38cde5fd6961a92}} 
+void {\bfseries finalize} ()
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_a65672d44f25e6fdb483f01fc54fd432e}\label{classnlib_1_1NlModFlow_a65672d44f25e6fdb483f01fc54fd432e}} 
+{\footnotesize template$<$class Derived\+Sources $>$ }\\std\+::enable\+\_\+if\+\_\+t$<$ std\+::is\+\_\+base\+\_\+of$<$ \mbox{\hyperlink{classnlib_1_1NlSources}{Nl\+Sources}}, Derived\+Sources $>$\+::value, typename Derived\+Sources\+::\+Ptr $>$ {\bfseries sources} ()
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_ad46a958aadef5723ec3cc6f33978566e}\label{classnlib_1_1NlModFlow_ad46a958aadef5723ec3cc6f33978566e}} 
+{\footnotesize template$<$class Derived\+Sinks $>$ }\\std\+::enable\+\_\+if\+\_\+t$<$ std\+::is\+\_\+base\+\_\+of$<$ \mbox{\hyperlink{classnlib_1_1NlSinks}{Nl\+Sinks}}, Derived\+Sinks $>$\+::value, typename Derived\+Sinks\+::\+Ptr $>$ {\bfseries sinks} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\footnotesize template$<$class Derived\+Module , typename ... Args$>$ }\\Derived\+Module\+::\+Ptr \mbox{\hyperlink{classnlib_1_1NlModFlow_a95a490b5abdc39afd88e6ff7833ebc39}{load\+Module}} (Args \&\&...args)
+\begin{DoxyCompactList}\small\item\em load\+Module \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_a5002d11c19e3539688e3bbcc8311329e}\label{classnlib_1_1NlModFlow_a5002d11c19e3539688e3bbcc8311329e}} 
+{\footnotesize template$<$class Derived\+Module $>$ }\\Derived\+Module\+::\+Ptr {\bfseries get\+Module} (const std\+::string \&name)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_acc4424011a48ebd2a64b09ab351e4469}\label{classnlib_1_1NlModFlow_acc4424011a48ebd2a64b09ab351e4469}} 
+virtual void {\bfseries load\+Modules} ()=0
+\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_a2af95dbc2c861029dee63f064bab6bb9}\label{classnlib_1_1NlModFlow_a2af95dbc2c861029dee63f064bab6bb9}} 
+class {\bfseries Nl\+Module}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_acfec2b1777fab462ba71e108cba099ca}\label{classnlib_1_1NlModFlow_acfec2b1777fab462ba71e108cba099ca}} 
+class {\bfseries Nl\+Sources}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_ac087572953d784f8d86f57c0bc6b388a}\label{classnlib_1_1NlModFlow_ac087572953d784f8d86f57c0bc6b388a}} 
+class {\bfseries Nl\+Sinks}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The \mbox{\hyperlink{classnlib_1_1NlModFlow}{Nl\+Mod\+Flow}} class. 
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classnlib_1_1NlModFlow_a95a490b5abdc39afd88e6ff7833ebc39}\label{classnlib_1_1NlModFlow_a95a490b5abdc39afd88e6ff7833ebc39}} 
+\index{nlib::NlModFlow@{nlib::NlModFlow}!loadModule@{loadModule}}
+\index{loadModule@{loadModule}!nlib::NlModFlow@{nlib::NlModFlow}}
+\doxysubsubsection{\texorpdfstring{loadModule()}{loadModule()}}
+{\footnotesize\ttfamily template$<$class Derived\+Module , typename ... Args$>$ \\
+Derived\+Module\+::\+Ptr nlib\+::\+Nl\+Mod\+Flow\+::load\+Module (\begin{DoxyParamCaption}\item[{Args \&\&...}]{args }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+load\+Module 
+
+
+\begin{DoxyParams}{Parameters}
+{\em args} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nl__modflow_8h}{nl\+\_\+modflow.\+h}}\end{DoxyCompactItemize}

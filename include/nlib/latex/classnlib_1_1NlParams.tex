@@ -1,0 +1,59 @@
+\hypertarget{classnlib_1_1NlParams}{}\doxysection{nlib\+::Nl\+Params Class Reference}
+\label{classnlib_1_1NlParams}\index{nlib::NlParams@{nlib::NlParams}}
+
+
+Coveniently handle any type of parameter with error check and debugging info.  
+
+
+
+
+{\ttfamily \#include $<$nl\+\_\+params.\+h$>$}
+
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structnlib_1_1NlParams_1_1Type_3_01T_00_01empty__container_01_4}{Type$<$ T, empty\+\_\+container $>$}}
+\item 
+struct \mbox{\hyperlink{structnlib_1_1NlParams_1_1Type_3_01T_00_01std_1_1vector_01_4}{Type$<$ T, std\+::vector $>$}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a04e0e2ec2f9574efcd852e9ac2d93a1e}\label{classnlib_1_1NlParams_a04e0e2ec2f9574efcd852e9ac2d93a1e}} 
+{\bfseries Nl\+Params} (Xml\+Rpc\+::\+Xml\+Rpc\+Value \&\+\_\+params)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a4a6498effa89cb48f5fa20e785efe094}\label{classnlib_1_1NlParams_a4a6498effa89cb48f5fa20e785efe094}} 
+{\bfseries Nl\+Params} (const Xml\+Rpc\+::\+Xml\+Rpc\+Value \&\&\+\_\+params)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a2a517db1674f2e232b3173a835da2da9}\label{classnlib_1_1NlParams_a2a517db1674f2e232b3173a835da2da9}} 
+{\bfseries Nl\+Params} (const \mbox{\hyperlink{classnlib_1_1NlParams}{Nl\+Params}} \&\+\_\+nl\+Params)=default
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a52e59ba03cf40368fcead3d63384134b}\label{classnlib_1_1NlParams_a52e59ba03cf40368fcead3d63384134b}} 
+void {\bfseries set\+Params} (Xml\+Rpc\+::\+Xml\+Rpc\+Value \&\+\_\+params)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_af12514d729d7a2db66eb9fbe802e2a70}\label{classnlib_1_1NlParams_af12514d729d7a2db66eb9fbe802e2a70}} 
+\mbox{\hyperlink{classnlib_1_1NlParams}{Nl\+Params}} \& {\bfseries operator=} (Xml\+Rpc\+::\+Xml\+Rpc\+Value \&\+\_\+params)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a1a8bd7b0fca193f6ebff2ebdebcdc3a5}\label{classnlib_1_1NlParams_a1a8bd7b0fca193f6ebff2ebdebcdc3a5}} 
+\mbox{\hyperlink{classnlib_1_1NlParams}{Nl\+Params}} {\bfseries operator\mbox{[}$\,$\mbox{]}} (const std\+::string \&name) const
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a739ca43971ca286ee41bd6e69b473d65}\label{classnlib_1_1NlParams_a739ca43971ca286ee41bd6e69b473d65}} 
+{\footnotesize template$<$typename T $>$ }\\T {\bfseries get} (const boost\+::optional$<$ c\+\_\+str $>$ \&name=boost\+::none, const boost\+::optional$<$ T $>$ \&default\+Value=boost\+::none, const boost\+::optional$<$ int $>$ \&index=boost\+::none) const
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a433189e22848c0422107ed6d710df515}\label{classnlib_1_1NlParams_a433189e22848c0422107ed6d710df515}} 
+{\footnotesize template$<$typename T , template$<$ typename ... $>$ typename container$>$ }\\container$<$ T $>$ {\bfseries get} (const boost\+::optional$<$ c\+\_\+str $>$ \&name=boost\+::none, const boost\+::optional$<$ container$<$ T $>$$>$ \&default\+Value=boost\+::none, const boost\+::optional$<$ int $>$ \&index=boost\+::none) const
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a02e3d753b6c16608c18bf202fb3b1ed0}\label{classnlib_1_1NlParams_a02e3d753b6c16608c18bf202fb3b1ed0}} 
+{\footnotesize template$<$typename T $>$ }\\T {\bfseries get} (const boost\+::optional$<$ c\+\_\+str $>$ \&name, const std\+::initializer\+\_\+list$<$ c\+\_\+str $>$ \&values, const boost\+::optional$<$ T $>$ \&default\+Value=boost\+::none, const boost\+::optional$<$ int $>$ \&index=boost\+::none) const
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlParams_a8c7962b46a2861484b5fbc779509d9b7}\label{classnlib_1_1NlParams_a8c7962b46a2861484b5fbc779509d9b7}} 
+{\footnotesize template$<$typename T , template$<$ typename ... $>$ typename container$>$ }\\container$<$ T $>$ {\bfseries get} (const boost\+::optional$<$ c\+\_\+str $>$ \&name, const std\+::initializer\+\_\+list$<$ c\+\_\+str $>$ \&values, const boost\+::optional$<$ container$<$ T $>$$>$ \&default\+Value=boost\+::none, const boost\+::optional$<$ int $>$ \&index=boost\+::none) const
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Coveniently handle any type of parameter with error check and debugging info. 
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+nl\+\_\+params.\+h\end{DoxyCompactItemize}

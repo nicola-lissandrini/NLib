@@ -1,0 +1,48 @@
+\hypertarget{group__pt}{}\doxysection{Profiling tools}
+\label{group__pt}\index{Profiling tools@{Profiling tools}}
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{group__pt_gab7634ace2037016a5d0f9f602df830bf}{P\+R\+O\+F\+I\+L\+E\+\_\+\+N\+\_\+\+EN}}(taken,  lambda,  ndiv,  enable)
+\begin{DoxyCompactList}\small\item\em Compute execution time of {\ttfamily lambda}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+
+
+\doxysubsection{Macro Definition Documentation}
+\mbox{\Hypertarget{group__pt_gab7634ace2037016a5d0f9f602df830bf}\label{group__pt_gab7634ace2037016a5d0f9f602df830bf}} 
+\index{Profiling tools@{Profiling tools}!PROFILE\_N\_EN@{PROFILE\_N\_EN}}
+\index{PROFILE\_N\_EN@{PROFILE\_N\_EN}!Profiling tools@{Profiling tools}}
+\doxysubsubsection{\texorpdfstring{PROFILE\_N\_EN}{PROFILE\_N\_EN}}
+{\footnotesize\ttfamily \#define P\+R\+O\+F\+I\+L\+E\+\_\+\+N\+\_\+\+EN(\begin{DoxyParamCaption}\item[{}]{taken,  }\item[{}]{lambda,  }\item[{}]{ndiv,  }\item[{}]{enable }\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\{\(\backslash\)}
+\DoxyCodeLine{std::stringstream ID;\(\backslash\)}
+\DoxyCodeLine{    ID << \_\_PRETTY\_FUNCTION\_\_ << \textcolor{stringliteral}{":"} << \_\_LINE\_\_-\/2;\(\backslash\)}
+\DoxyCodeLine{    auto \_start = std::chrono::steady\_clock::now ();\(\backslash\)}
+\DoxyCodeLine{    lambda();\(\backslash\)}
+\DoxyCodeLine{    auto \_end = std::chrono::steady\_clock::now ();\(\backslash\)}
+\DoxyCodeLine{    taken = double(std::chrono::duration\_cast<std::chrono::microseconds> (\_end -\/ \_start).count ())/1e3;\(\backslash\)}
+\DoxyCodeLine{    if (enable) \{\(\backslash\)}
+\DoxyCodeLine{        if (ndiv == 1) std::cout << ID.str() << ": taken: " << taken << "ms" << std::endl;\(\backslash\)}
+\DoxyCodeLine{        else std::cout << ID.str() << ": total: " << taken << "ms each: " << taken/\textcolor{keywordtype}{double}(ndiv) << "ms over " << ndiv << " trials" << std::endl; \}\}}
+
+\end{DoxyCode}
+
+
+Compute execution time of {\ttfamily lambda}. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em taken} & floating point varible to store total time \\
+\hline
+{\em lambda} & lambda function of type \mbox{[}\&\mbox{]}()\{ ... generic code ...\} \\
+\hline
+{\em ndiv} & number of trials inside the lambda, total time is divided by {\ttfamily ndiv} in printed output \\
+\hline
+{\em enable} & enable output printing \\
+\hline
+\end{DoxyParams}

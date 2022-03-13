@@ -1,0 +1,50 @@
+\hypertarget{classnlib_1_1NlSinks}{}\doxysection{nlib\+::Nl\+Sinks Class Reference}
+\label{classnlib_1_1NlSinks}\index{nlib::NlSinks@{nlib::NlSinks}}
+
+
+Inheritance diagram for nlib\+::Nl\+Sinks\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=167pt]{classnlib_1_1NlSinks__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for nlib\+::Nl\+Sinks\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=167pt]{classnlib_1_1NlSinks__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlSinks_a9541bd18379773baaa86efc2587ec27e}\label{classnlib_1_1NlSinks_a9541bd18379773baaa86efc2587ec27e}} 
+{\bfseries Nl\+Sinks} (const std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classnlib_1_1NlModFlow}{Nl\+Mod\+Flow}} $>$ \&mod\+Flow)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlSinks_a40cfc09fdb1407110595cad6128d20a9}\label{classnlib_1_1NlSinks_a40cfc09fdb1407110595cad6128d20a9}} 
+void {\bfseries init\+Params} (const \mbox{\hyperlink{classnlib_1_1NlParams}{Nl\+Params}} \&params)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlSinks_a6dd271c9a03e9e71f6d792f19e143699}\label{classnlib_1_1NlSinks_a6dd271c9a03e9e71f6d792f19e143699}} 
+virtual void {\bfseries configure\+Channels} ()=0
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlSinks_a4524f8425adf111efcfc6b189b10ecfd}\label{classnlib_1_1NlSinks_a4524f8425adf111efcfc6b189b10ecfd}} 
+bool {\bfseries late\+Configuration} () const override
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlSinks_a52d3cf69ebc82706d347fbea26743493}\label{classnlib_1_1NlSinks_a52d3cf69ebc82706d347fbea26743493}} 
+{\footnotesize template$<$typename T , class Parent\+Class $>$ }\\void {\bfseries declare\+Sink} (const std\+::string \&name, void(Parent\+Class\+::$\ast$parent\+Slot)(T) const, const Parent\+Class $\ast$parent)
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlSinks_a0a487c87b7aace34d2a8a8407dc20166}\label{classnlib_1_1NlSinks_a0a487c87b7aace34d2a8a8407dc20166}} 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries connect\+To\+Sink} (const std\+::string \&channel\+Name, const std\+::string \&sink\+Name)
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nl__modflow_8h}{nl\+\_\+modflow.\+h}}\end{DoxyCompactItemize}

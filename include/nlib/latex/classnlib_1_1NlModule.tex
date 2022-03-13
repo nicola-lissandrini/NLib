@@ -1,0 +1,86 @@
+\hypertarget{classnlib_1_1NlModule}{}\doxysection{nlib\+::Nl\+Module Class Reference}
+\label{classnlib_1_1NlModule}\index{nlib::NlModule@{nlib::NlModule}}
+
+
+This is the core node of a Mod\+Flow graph. Inherit this class to define the main computation to happen in this module. Each module can define new Channels to which it can emit output events after computation is done.  
+
+
+
+
+{\ttfamily \#include $<$nl\+\_\+modflow.\+h$>$}
+
+
+
+Inheritance diagram for nlib\+::Nl\+Module\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=264pt]{classnlib_1_1NlModule__inherit__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classnlib_1_1NlModule_ac4ec9861dae8eca5f6158bb792eae3b2}{Nl\+Module}} (const std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classnlib_1_1NlModFlow}{Nl\+Mod\+Flow}} $>$ \&mod\+Flow, const std\+::string \&name)
+\begin{DoxyCompactList}\small\item\em Construct the parent \mbox{\hyperlink{classnlib_1_1NlModule}{Nl\+Module}} object. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_a517ea4c4f8a9ad5aee2cf3003e5e1414}\label{classnlib_1_1NlModule_a517ea4c4f8a9ad5aee2cf3003e5e1414}} 
+const std\+::string \& {\bfseries name} () const
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_a283b399681ab98f88170a4da24d0e4bd}\label{classnlib_1_1NlModule_a283b399681ab98f88170a4da24d0e4bd}} 
+virtual void {\bfseries init\+Params} (const \mbox{\hyperlink{classnlib_1_1NlParams}{Nl\+Params}} \&params)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_a4c2b96232467a10c523f329fe02c4f23}\label{classnlib_1_1NlModule_a4c2b96232467a10c523f329fe02c4f23}} 
+virtual void {\bfseries configure\+Channels} ()=0
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_a7cecd35f9aecc4350f2ffba10af72bd1}\label{classnlib_1_1NlModule_a7cecd35f9aecc4350f2ffba10af72bd1}} 
+virtual bool {\bfseries late\+Configuration} () const
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_a97cdc6900d0687195305a20475e6b344}\label{classnlib_1_1NlModule_a97cdc6900d0687195305a20475e6b344}} 
+{\footnotesize template$<$typename T , typename M $>$ }\\std\+::enable\+\_\+if\+\_\+t$<$ std\+::is\+\_\+base\+\_\+of$<$ \mbox{\hyperlink{classnlib_1_1NlModule}{Nl\+Module}}, M $>$\+::value $>$ {\bfseries request\+Connection} (const std\+::string \&channel\+Name, void(M\+::$\ast$slot)(T))
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_ae8a4ff60ee8d4f3428ab9ed96d83a6af}\label{classnlib_1_1NlModule_ae8a4ff60ee8d4f3428ab9ed96d83a6af}} 
+{\footnotesize template$<$typename T $>$ }\\\mbox{\hyperlink{classnlib_1_1Channel}{Channel}} {\bfseries create\+Channel} (const std\+::string \&name)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_a83d90a090d98ee0e60035dcacedf8c38}\label{classnlib_1_1NlModule_a83d90a090d98ee0e60035dcacedf8c38}} 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries emit} (const \mbox{\hyperlink{classnlib_1_1Channel}{Channel}} \&channel, const T \&value)
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_adb914ca8d11b98b10452f796b1fb80a1}\label{classnlib_1_1NlModule_adb914ca8d11b98b10452f796b1fb80a1}} 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries emit} (const std\+::string \&channel\+Name, const T \&value)
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1NlModule_ad07abc7a4af115cfccc42f8088395c9c}\label{classnlib_1_1NlModule_ad07abc7a4af115cfccc42f8088395c9c}} 
+std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classnlib_1_1NlModFlow}{Nl\+Mod\+Flow}} $>$ {\bfseries \+\_\+mod\+Flow}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This is the core node of a Mod\+Flow graph. Inherit this class to define the main computation to happen in this module. Each module can define new Channels to which it can emit output events after computation is done. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classnlib_1_1NlModule_ac4ec9861dae8eca5f6158bb792eae3b2}\label{classnlib_1_1NlModule_ac4ec9861dae8eca5f6158bb792eae3b2}} 
+\index{nlib::NlModule@{nlib::NlModule}!NlModule@{NlModule}}
+\index{NlModule@{NlModule}!nlib::NlModule@{nlib::NlModule}}
+\doxysubsubsection{\texorpdfstring{NlModule()}{NlModule()}}
+{\footnotesize\ttfamily nlib\+::\+Nl\+Module\+::\+Nl\+Module (\begin{DoxyParamCaption}\item[{const std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classnlib_1_1NlModFlow}{Nl\+Mod\+Flow}} $>$ \&}]{mod\+Flow,  }\item[{const std\+::string \&}]{name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Construct the parent \mbox{\hyperlink{classnlib_1_1NlModule}{Nl\+Module}} object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em mod\+Flow} & Pointer to Mod\+Flow handler, automatically supplied by \mbox{\hyperlink{classnlib_1_1NlModFlow_a95a490b5abdc39afd88e6ff7833ebc39}{Nl\+Mod\+Flow\+::load\+Module}} (Args \&\&...args) \\
+\hline
+{\em name} & Unique name of the module \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nl__modflow_8h}{nl\+\_\+modflow.\+h}}\end{DoxyCompactItemize}

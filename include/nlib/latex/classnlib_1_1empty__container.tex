@@ -1,0 +1,100 @@
+\hypertarget{classnlib_1_1empty__container}{}\doxysection{nlib\+::empty\+\_\+container$<$ T $>$ Class Template Reference}
+\label{classnlib_1_1empty__container}\index{nlib::empty\_container$<$ T $>$@{nlib::empty\_container$<$ T $>$}}
+
+
+Fake container for unified vector and scalar params. Intended for internal use.  
+
+
+
+
+{\ttfamily \#include $<$nl\+\_\+params.\+h$>$}
+
+\doxysubsection*{Public Types}
+\begin{Indent}\textbf{ Standard container definitions}\par
+{\em \begin{DoxySeeAlso}{See also}
+\href{https://en.cppreference.com/w/cpp/named_req/Container}{\texttt{ https\+://en.\+cppreference.\+com/w/cpp/named\+\_\+req/\+Container}} 
+\end{DoxySeeAlso}
+}\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a2f3b8f5ab42855eeeedd095db88a2a34}\label{classnlib_1_1empty__container_a2f3b8f5ab42855eeeedd095db88a2a34}} 
+using {\bfseries value\+\_\+type} = T
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a86d1d2de58e7f6b4cc691f317b19f554}\label{classnlib_1_1empty__container_a86d1d2de58e7f6b4cc691f317b19f554}} 
+using {\bfseries reference} = T \&
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a1e2487f76b447574f17dab0f02730b27}\label{classnlib_1_1empty__container_a1e2487f76b447574f17dab0f02730b27}} 
+using {\bfseries const\+\_\+reference} = const T \&
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a75bb09b4c9468828e59f438e101fb0b9}\label{classnlib_1_1empty__container_a75bb09b4c9468828e59f438e101fb0b9}} 
+using {\bfseries wrapper\+\_\+type} = std\+::array$<$ T, 1 $>$
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a7833d7120fd4150f199635768ee062e2}\label{classnlib_1_1empty__container_a7833d7120fd4150f199635768ee062e2}} 
+using {\bfseries iterator} = typename wrapper\+\_\+type\+::iterator
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a5bbb0d4fa77d6c0d79f25b80c40939a5}\label{classnlib_1_1empty__container_a5bbb0d4fa77d6c0d79f25b80c40939a5}} 
+using {\bfseries const\+\_\+iterator} = typename wrapper\+\_\+type\+::const\+\_\+iterator
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_af025da3165269f86d01fa6895686aba7}\label{classnlib_1_1empty__container_af025da3165269f86d01fa6895686aba7}} 
+using {\bfseries difference\+\_\+type} = typename wrapper\+\_\+type\+::difference\+\_\+type
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a659085dc51eb00d4f8dd8817a5eafea4}\label{classnlib_1_1empty__container_a659085dc51eb00d4f8dd8817a5eafea4}} 
+using {\bfseries size\+\_\+type} = typename wrapper\+\_\+type\+::size\+\_\+type
+\end{DoxyCompactItemize}
+\end{Indent}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_adb0bd964be9a9fe6129923f990bb3e0f}\label{classnlib_1_1empty__container_adb0bd964be9a9fe6129923f990bb3e0f}} 
+{\bfseries empty\+\_\+container} (const T \&\+\_\+value)
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_ab24f9a292ddef5d301f1edb00ccafd2a}\label{classnlib_1_1empty__container_ab24f9a292ddef5d301f1edb00ccafd2a}} 
+{\bfseries operator T} ()
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_af695e7a53e9058e39a0e2336174d2695}\label{classnlib_1_1empty__container_af695e7a53e9058e39a0e2336174d2695}} 
+T \& {\bfseries operator=} (const T \&\+\_\+value)
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a527eedaf4a058dda396e20f261f4cf71}\label{classnlib_1_1empty__container_a527eedaf4a058dda396e20f261f4cf71}} 
+bool {\bfseries operator==} (const \mbox{\hyperlink{classnlib_1_1empty__container}{empty\+\_\+container}}$<$ T $>$ \&b)
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_ab1eb914d3fcdc145a9cd3166b0609328}\label{classnlib_1_1empty__container_ab1eb914d3fcdc145a9cd3166b0609328}} 
+bool {\bfseries operator!=} (const \mbox{\hyperlink{classnlib_1_1empty__container}{empty\+\_\+container}}$<$ T $>$ \&b)
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_aac9969f57ebbf2b65963ea0a73fe0651}\label{classnlib_1_1empty__container_aac9969f57ebbf2b65963ea0a73fe0651}} 
+iterator {\bfseries begin} ()
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_aaf16b33d5b24aa413f28404eae6b2fd7}\label{classnlib_1_1empty__container_aaf16b33d5b24aa413f28404eae6b2fd7}} 
+iterator {\bfseries end} ()
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_aa190cdd0a9ab33d43b2dc10a54ff7a57}\label{classnlib_1_1empty__container_aa190cdd0a9ab33d43b2dc10a54ff7a57}} 
+const\+\_\+iterator {\bfseries cbegin} () const
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_af5d31d48530a615aa7692383578ee576}\label{classnlib_1_1empty__container_af5d31d48530a615aa7692383578ee576}} 
+const\+\_\+iterator {\bfseries cend} () const
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a06810e01b51eacd2202b7df4b7dc353f}\label{classnlib_1_1empty__container_a06810e01b51eacd2202b7df4b7dc353f}} 
+size\+\_\+type {\bfseries size} () const
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a5b3b90174fc50ea5888a9ce710c6c3ee}\label{classnlib_1_1empty__container_a5b3b90174fc50ea5888a9ce710c6c3ee}} 
+size\+\_\+type {\bfseries max\+\_\+size} () const
+\item 
+\mbox{\Hypertarget{classnlib_1_1empty__container_a0e21d0b8d13b30f6039b4c52037b18f9}\label{classnlib_1_1empty__container_a0e21d0b8d13b30f6039b4c52037b18f9}} 
+bool {\bfseries empty} () const
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+\subsubsection*{template$<$typename T$>$\newline
+class nlib\+::empty\+\_\+container$<$ T $>$}
+
+Fake container for unified vector and scalar params. Intended for internal use. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em T} & any type \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+nl\+\_\+params.\+h\end{DoxyCompactItemize}
