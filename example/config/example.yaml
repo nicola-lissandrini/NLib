@@ -1,0 +1,10 @@
+example_node:
+  rate: 1
+  topics:
+    string_in_sub: /string
+    string_out_pub: /processed_string
+  module_1:
+    integer: 4
+    boolean: true
+  module_2:
+    string_param: "example_string"

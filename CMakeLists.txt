@@ -18,6 +18,10 @@ include_directories(
 	${catkin_INCLUDE_DIRS}
 )
 
+add_executable (example
+	example/example_node.cpp example/example_modflow.cpp)
+target_link_libraries (example ${catkin_LIBRARIES})
+
 add_library (nlib src/nlib.cpp)
 
 install(TARGETS nlib
