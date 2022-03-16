@@ -33,9 +33,6 @@ public:
 
 protected:
 	void onSynchronousClock (const ros::TimerEvent &timerEvent);
-
-private:
-	int _seq;
 };
 
 

@@ -1,4 +1,0 @@
-<map id="nlib::NlSources" name="nlib::NlSources">
-<area shape="rect" id="node1" title=" " alt="" coords="5,80,124,107"/>
-<area shape="rect" id="node2" href="$classnlib_1_1NlModule.html" title="This is the core node of a ModFlow graph. Inherit this class to define the main computation to happen..." alt="" coords="7,5,123,32"/>
-</map>

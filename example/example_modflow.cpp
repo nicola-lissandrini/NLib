@@ -10,26 +10,26 @@ void ExampleModFlow::loadModules()
 	loadModule<Module3> ();
 }
 
-void Module1::configureChannels ()
+void Module1::setupNetwork ()
 {
 	createChannel<int> ("processed_integer");
 	requestConnection ("integer_source", &Module1::processInteger);
 }
 
-void Module2::configureChannels ()
+void Module2::setupNetwork ()
 {
 	createChannel<string> ("processed_string");
 	requestConnection ("string_source", &Module2::processString);
 }
 
-void Module3::configureChannels()
+void Module3::setupNetwork()
 {
 	createChannel<string> ("finalized_string");
 	requestConnection ("integer_source", &Module3::updateInteger);
 	requestConnection ("processed_string", &Module3::updateString);
 }
 
-void ExampleSinks::configureChannels ()
+void ExampleSinks::setupNetwork ()
 {
 	connectToSink<std::string> ("finalized_string", "publish_string");
 }

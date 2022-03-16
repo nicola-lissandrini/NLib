@@ -22,7 +22,7 @@ public:
 		 nlib::NlSinks (modFlow)
 	{}
 
-	void configureChannels () override;
+	void setupNetwork () override;
 
 	DEF_SHARED (ExampleSinks)
 };
@@ -40,7 +40,7 @@ public:
 	{}
 
 	void initParams (const nlib::NlParams &nlParams) override;
-	void configureChannels () override;
+	void setupNetwork () override;
 
 	void processInteger (int value);
 
@@ -63,7 +63,7 @@ public:
 	{}
 
 	void initParams (const nlib::NlParams &nlParams) override;
-	void configureChannels () override;
+	void setupNetwork () override;
 
 	void processString (const std::string &value);
 
@@ -81,7 +81,7 @@ public:
 	{}
 
 	void initParams (const nlib::NlParams &nlParams) override {}
-	void configureChannels () override;
+	void setupNetwork () override;
 
 	void updateInteger (int value);
 	void updateString (const std::string &value);

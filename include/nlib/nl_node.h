@@ -26,7 +26,7 @@ public:
 	int spin ();
 
 protected:
-	void initModFlow ();
+	void init ();
 	void finalizeModFlow ();
 
 	template<typename T>
@@ -78,19 +78,18 @@ private:
 	std::string getStdTopic (const std::string &name, bool sub);
 
 protected:
-	std::shared_ptr<ros::NodeHandle> nh;
-	NlParams params;
-	int argc;
-	char **argv;
+	std::shared_ptr<ros::NodeHandle> _nh;
+	NlParams _nlParams;
+	int _argc;
+	char **_argv;
 
 private:
-	NlModFlow::Ptr nlModFlow;
-
-	std::map<std::string, ros::Publisher> publishers;
-	std::map<std::string, ros::Subscriber> subscribers;
-	ros::Timer clock;
-	std::string name;
-	bool synchronous;
+	NlModFlow::Ptr _nlModFlow;
+	std::map<std::string, ros::Publisher> _publishers;
+	std::map<std::string, ros::Subscriber> _subscribers;
+	ros::Timer _clock;
+	std::string _name;
+	bool _synchronous;
 };
 
 
@@ -148,7 +147,7 @@ typename OutputManager<OutputType>::PubsMap::iterator
 #define NL_NODE(Derived) \
 using Base = nlib::NlNode<Derived>;\
     friend Base; \
-    using Base::initModFlow; \
+    using Base::init; \
     using Base::finalizeModFlow; \
     using Base::sinks; \
     using Base::sources; \
@@ -159,13 +158,13 @@ using Base = nlib::NlNode<Derived>;\
 
 		    template<class Derived>
 		    NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uint32_t options):
-	 name(_name),
-	 argc(_argc),
-	 argv(_argv)
+	 _name(_name),
+	 _argc(_argc),
+	 _argv(_argv)
 {
-	ros::init (argc, argv, name, options);
+	ros::init (_argc, _argv, _name, options);
 
-	nh = std::make_shared<ros::NodeHandle> ();
+	_nh = std::make_shared<ros::NodeHandle> ();
 
 	initParams ();
 	initROS ();
@@ -175,7 +174,7 @@ template<class Derived>
 template<typename T>
 void NlNode<Derived>::publish (const std::string &name,
 						 const T &msg) const {
-	return publishers.at (name).publish (msg);
+	return _publishers.at (name).publish (msg);
 }
 
 
@@ -186,7 +185,7 @@ void NlNode<Derived>::addSub (const std::string &name,
 						uint32_t queueSize,
 						void (Derived::*fp)(T),
 						const ros::TransportHints &transportHints) {
-	subscribers.insert ({name, nh->subscribe (topic, queueSize, fp, &derived(), transportHints )});
+	_subscribers.insert ({name, _nh->subscribe (topic, queueSize, fp, &derived(), transportHints )});
 }
 
 template<class Derived>
@@ -204,7 +203,7 @@ void NlNode<Derived>::addPub (const std::string &name,
 						const std::string &topic,
 						uint32_t queueSize,
 						bool latch) {
-	publishers.insert ({name, nh->advertise<T> (topic, queueSize, latch)});
+	_publishers.insert ({name, _nh->advertise<T> (topic, queueSize, latch)});
 }
 
 template<class Derived>
@@ -223,7 +222,7 @@ std::shared_ptr<ros::Publisher> NlNode<Derived>::createOutput (const std::string
 												   bool latch)
 {
 	return std::make_shared<ros::Publisher> (
-	    nh->advertise<T> (topicPrefix + "/" + name, queueSize, latch));
+	    _nh->advertise<T> (topicPrefix + "/" + name, queueSize, latch));
 }
 
 template<class Derived>
@@ -231,24 +230,24 @@ std::string NlNode<Derived>::getStdTopic (const std::string &name, bool sub) {
 	try {
 		std::stringstream pathSS;
 		pathSS << "topics/" << name << "_" << (sub ? "sub" : "pub");
-		return params.get<std::string> (pathSS.str ().c_str());
+		return _nlParams.get<std::string> (pathSS.str ().c_str());
 	} catch (const XmlRpc::XmlRpcException &) {
 		std::stringstream pathSS;
 		pathSS << "topics/" << (sub ? "subs/" : "pubs/") << name;
-		return params.get<std::string> (pathSS.str ().c_str());
+		return _nlParams.get<std::string> (pathSS.str ().c_str());
 	}
 }
 
 template<class Derived>
 void NlNode<Derived>::initParams ()
 {
-	if (nh->hasParam (name)) {
+	if (_nh->hasParam (_name)) {
 		XmlRpc::XmlRpcValue xmlParams;
 
-		nh->getParam (name, xmlParams);
+		_nh->getParam (_name, xmlParams);
 
 		if (xmlParams.begin () != xmlParams.end ())
-			params = xmlParams;
+			_nlParams = xmlParams;
 
 	}
 
@@ -260,37 +259,37 @@ template<class Derived>
 void NlNode<Derived>::initROS ()
 {
 	try {
-		float clockPeriod = 1 / params.get<float> ("rate");
+		float clockPeriod = 1 / _nlParams.get<float> ("rate");
 
-		clock = nh->createTimer (ros::Duration(clockPeriod), &Derived::onSynchronousClock, &derived(), false, false);
+		_clock = _nh->createTimer (ros::Duration(clockPeriod), &Derived::onSynchronousClock, &derived(), false, false);
 
-		synchronous = true;
+		_synchronous = true;
 	} catch (const XmlRpc::XmlRpcException &e) {
-		synchronous = false;
+		_synchronous = false;
 	}
 }
 
 template<class Derived>
 typename NlNode<Derived>::DerivedSinks::Ptr
     NlNode<Derived>::sinks() {
-	return nlModFlow->sinks<DerivedSinks> ();
+	return _nlModFlow->sinks<DerivedSinks> ();
 }
 
 template<class Derived>
 typename NlNode<Derived>::DerivedSources::Ptr
     NlNode<Derived>::sources() {
-	return nlModFlow->sources<DerivedSources> ();
+	return _nlModFlow->sources<DerivedSources> ();
 }
 
 template<class Derived>
-void NlNode<Derived>::initModFlow ()
+void NlNode<Derived>::init ()
 {
-	nlModFlow = std::make_shared<DerivedModFlow> ();
+	_nlModFlow = std::make_shared<DerivedModFlow> ();
 
 	try {
 		derived().initParams ();
 		derived().initROS ();
-		nlModFlow->init<DerivedSources, DerivedSinks> (params);
+		_nlModFlow->init<DerivedSources, DerivedSinks> (_nlParams);
 
 	} catch (const XmlRpc::XmlRpcException &e) {
 		ROS_ERROR_STREAM(e.getMessage ());
@@ -300,7 +299,7 @@ void NlNode<Derived>::initModFlow ()
 template<class Derived>
 void NlNode<Derived>::finalizeModFlow () {
 	try {
-		nlModFlow->finalize ();
+		_nlModFlow->finalize ();
 	} catch (const XmlRpc::XmlRpcException &e) {
 		ROS_ERROR_STREAM(e.getMessage ());
 	}
@@ -313,8 +312,8 @@ int NlNode<Derived>::spin ()
 
 	spinner.start ();
 
-	if (synchronous)
-		clock.start ();
+	if (_synchronous)
+		_clock.start ();
 
 	ros::waitForShutdown ();
 
