@@ -18,7 +18,7 @@ public:
 class ExampleSinks : public nlib::NlSinks
 {
 public:
-	ExampleSinks (const std::shared_ptr<nlib::NlModFlow> &modFlow):
+	ExampleSinks (nlib::NlModFlow *modFlow):
 		 nlib::NlSinks (modFlow)
 	{}
 
@@ -35,7 +35,7 @@ class Module1 : public nlib::NlModule
 	};
 
 public:
-	Module1 (const std::shared_ptr<nlib::NlModFlow> &modFlow):
+	Module1 (nlib::NlModFlow *modFlow):
 		 nlib::NlModule (modFlow, "module_1")
 	{}
 
@@ -58,7 +58,7 @@ class Module2 : public nlib::NlModule
 	};
 
 public:
-	Module2 (const std::shared_ptr<nlib::NlModFlow> &modFlow):
+	Module2 (nlib::NlModFlow *modFlow):
 		 nlib::NlModule (modFlow, "module_2")
 	{}
 
@@ -76,7 +76,7 @@ public:
 class Module3 : public nlib::NlModule
 {
 public:
-	Module3  (const std::shared_ptr<nlib::NlModFlow> &modFlow):
+	Module3  (nlib::NlModFlow  *modFlow):
 		 nlib::NlModule (modFlow, "module_3")
 	{}
 

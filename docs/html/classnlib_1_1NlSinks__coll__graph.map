@@ -1,0 +1,4 @@
+<map id="nlib::NlSinks" name="nlib::NlSinks">
+<area shape="rect" id="node1" title="NlSinks is a particular NlModule that do not create regular channels nor emit regular events but crea..." alt="" coords="12,80,115,107"/>
+<area shape="rect" id="node2" href="$classnlib_1_1NlModule.html" title="This is the core node of a ModFlow graph. Inherit this class to define the main computation to happen..." alt="" coords="5,5,121,32"/>
+</map>

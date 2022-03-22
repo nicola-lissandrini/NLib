@@ -128,14 +128,14 @@ public:
 	   // Overload for enums
 	template<typename T>
 	T get (const boost::optional<c_str> &name,
-		  const std::initializer_list<c_str> &values,
+		  const std::vector<c_str> &values,
 		  const boost::optional<T> &defaultValue = boost::none,
 		  const boost::optional<int> &index = boost::none) const;
 
 	   // Overload for vectors of enums
 	template<typename T, template<typename ...> typename container>
 	container<T> get (const boost::optional<c_str> &name,
-				   const std::initializer_list<c_str> &values,
+				   const std::vector<c_str> &values,
 				   const boost::optional<container<T>> &defaultValue = boost::none,
 				   const boost::optional<int> &index = boost::none) const;
 
@@ -213,7 +213,7 @@ container<T> NlParams::get (const boost::optional<c_str> &name,
 
 template<typename T>
 T NlParams::get (const boost::optional<c_str> &name,
-			  const std::initializer_list<c_str> &values,
+			  const std::vector<c_str> &values,
 			  const boost::optional<T> &defaultValue,
 			  const boost::optional<int> &index) const
 {
@@ -234,7 +234,7 @@ T NlParams::enumFind (const std::string &value, const std::vector<c_str> &values
 
 template<typename T, template<typename ...> typename container>
 container<T> NlParams::get (const boost::optional<c_str> &name,
-					   const std::initializer_list<c_str> &values,
+					   const std::vector<c_str> &values,
 					   const boost::optional<container<T>> &defaultValue,
 					   const boost::optional<int> &index) const
 {
