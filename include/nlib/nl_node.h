@@ -69,8 +69,8 @@ protected:
 	void initParams ();
 	void initROS ();
 
-	typename DerivedSinks::Ptr sinks ();
-	typename DerivedSources::Ptr sources ();
+	std::shared_ptr<DerivedSinks> sinks ();
+	std::shared_ptr<DerivedSources> sources ();
 	Derived &derived () { return static_cast<Derived&> (*this); }
 	const Derived &derived () const { return static_cast<const Derived &> (*this); }
 
@@ -270,13 +270,13 @@ void NlNode<Derived>::initROS ()
 }
 
 template<class Derived>
-typename NlNode<Derived>::DerivedSinks::Ptr
+std::shared_ptr<typename NlNode<Derived>::DerivedSinks>
     NlNode<Derived>::sinks() {
 	return _nlModFlow->sinks<DerivedSinks> ();
 }
 
 template<class Derived>
-typename NlNode<Derived>::DerivedSources::Ptr
+std::shared_ptr<typename NlNode<Derived>::DerivedSources>
     NlNode<Derived>::sources() {
 	return _nlModFlow->sources<DerivedSources> ();
 }
