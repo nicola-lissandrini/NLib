@@ -9,12 +9,13 @@
 #include <boost/filesystem.hpp>
 #include <xmlrpcpp/XmlRpc.h>
 #include <iterator>
+
 #include "nl_utils.h"
 
 namespace nlib {
 
 /**
- * @brief Fake container for unified vector and scalar params.
+ * @brief Fake container for unified vector and scalar _params.
  * Intended for internal use
  * @param T any type
  */
@@ -33,8 +34,8 @@ public:
 	using difference_type = typename wrapper_type::difference_type;
 	using size_type = typename wrapper_type::size_type;
 	/// @}
-	empty_container (const T &_value);
-	empty_container ();
+	empty_container (const T &_value = T());
+	empty_container (size_t size);
 
 	operator T ();
 
@@ -71,6 +72,10 @@ template<class T, class U>
 boost::optional<T> optional_cast (U &&u) {
 	return u ? T(*std::forward<U>(u)) : static_cast<boost::optional<T>> (boost::none);
 }
+
+template<typename T, template<typename ...> class container = empty_container>
+struct Type;
+
 /**
  * @brief Coveniently handle any type of parameter with error check and debugging info
  */
@@ -79,39 +84,37 @@ class NlParams
 	using c_str = const char *;
 	using XmlParamsPtr = std::shared_ptr<XmlRpc::XmlRpcValue>;
 
-	template<typename T, template<typename ...> typename container = empty_container>
-	struct Type {
-		static bool checkType (XmlRpc::XmlRpcValue::Type type);
-		static container<T> convert (XmlRpc::XmlRpcValue &param);
-	};
-
 	XmlRpc::XmlRpcValue resolveName(const boost::optional<c_str> &name) const;
 
-	static void throwErrorType (XmlRpc::XmlRpcValue::Type gotType,
-						   const std::string &expected,
-						   const boost::optional<c_str> &tagName = boost::none);
+	void throwErrorType (XmlRpc::XmlRpcValue::Type gotType,
+					 const std::string &expected,
+					 const boost::optional<c_str> &tagName = boost::none) const;
 
-	static void throwErrorEnum (const std::string &value,
-						   const boost::optional<c_str> &tagName = boost::none);
+	void throwErrorEnum (const std::string &value,
+					 const boost::optional<c_str> &tagName = boost::none) const;
 
-	template<typename T, template<typename ...> typename container>
-	static container<T> get (XmlRpc::XmlRpcValue &params,
-						const boost::optional<c_str> &name,
-						const boost::optional<int> &index = boost::none);
+	void throwErrorResolution (const std::string &name) const;
+
+	template<typename T, template<typename ...> class container>
+	container<T> get (XmlRpc::XmlRpcValue &_params,
+				   const boost::optional<c_str> &name,
+				   const boost::optional<int> &index = boost::none) const;
 	template<typename T>
-	static T enumFind (const std::string &value,
-				    const std::vector<c_str> &values,
-				    const boost::optional<c_str> &name);
+	T enumFind (const std::string &value,
+			  const std::vector<c_str> &values,
+			  const boost::optional<c_str> &name) const;
+
+	std::string getFullPath (const std::string &base) const;
 
 public:
 	NlParams () = default;
-	NlParams (XmlRpc::XmlRpcValue &_params);
-	NlParams (const XmlRpc::XmlRpcValue &&_params);
-	NlParams (const NlParams &_nlParams) = default;
-	void setParams (XmlRpc::XmlRpcValue &_params);
+	NlParams (const XmlRpc::XmlRpcValue &params, const std::string &name = "", const NlParams *parent = nullptr);
+	NlParams (const NlParams &) = default;
+	void setParams (XmlRpc::XmlRpcValue &params);
 
-	NlParams &operator = (XmlRpc::XmlRpcValue &_params);
-	NlParams operator [](const std::string &name) const;
+	NlParams &operator = (XmlRpc::XmlRpcValue &params);
+	NlParams &operator = (const NlParams &) = default;
+	NlParams operator [] (const std::string &name) const;
 
 	   // Overload for literal and string types
 	template<typename T>
@@ -120,7 +123,7 @@ public:
 		  const boost::optional<int> &index = boost::none) const;
 
 	   // Overload for vectors of literal and string types
-	template<typename T, template<typename ...> typename container>
+	template<typename T, template<typename ...> class container>
 	container<T> get (const boost::optional<c_str> &name = boost::none,
 				   const boost::optional<container<T>> &defaultValue = boost::none,
 				   const boost::optional<int> &index = boost::none) const;
@@ -133,21 +136,26 @@ public:
 		  const boost::optional<int> &index = boost::none) const;
 
 	   // Overload for vectors of enums
-	template<typename T, template<typename ...> typename container>
+	template<typename T, template<typename ...> class container>
 	container<T> get (const boost::optional<c_str> &name,
 				   const std::vector<c_str> &values,
 				   const boost::optional<container<T>> &defaultValue = boost::none,
 				   const boost::optional<int> &index = boost::none) const;
 
+	template<typename T, template<typename ...> class container>
+	friend class Type;
+
 	DEF_SHARED(NlParams)
 private:
-	XmlRpc::XmlRpcValue params;
+	XmlRpc::XmlRpcValue _params;
+	std::string _name;
+	const NlParams *_parent;
 };
 
 inline XmlRpc::XmlRpcValue NlParams::resolveName (const boost::optional<c_str> &name) const
 {
 	// Need to resort to pointers due to bad programming of external lib XmlRpcValue
-	const XmlRpc::XmlRpcValue *param = &params;
+	const XmlRpc::XmlRpcValue *param = &_params;
 
 	if (!name.has_value ())
 		return param;
@@ -158,37 +166,53 @@ inline XmlRpc::XmlRpcValue NlParams::resolveName (const boost::optional<c_str> &
 	for (const auto &currentName : namePath.relative_path ()) {
 		const XmlRpc::XmlRpcValue &currentParam = *param;
 
-		param = &currentParam[currentName.string()];
+		try {
+			param = &currentParam[currentName.string()];
+		} catch (XmlRpc::XmlRpcException e) {
+			throwErrorResolution (getFullPath (*name));
+		}
 	}
 
 	return *param;
 }
 
 inline NlParams NlParams::operator [](const std::string &name) const {
-	return resolveName (name.c_str ());
+	return {resolveName (name.c_str ()), name, this};
 }
 
-template<typename T, template<typename ...> typename container>
-container<T> NlParams::get (XmlRpc::XmlRpcValue &params,
+template<typename T, template<typename ...> class container>
+container<T> NlParams::get (XmlRpc::XmlRpcValue &_params,
 					   const boost::optional<c_str> &name,
-					   const boost::optional<int> &index)
+					   const boost::optional<int> &index) const
 {
 	XmlRpc::XmlRpcValue param;
 
 	if (index.has_value ()) {
-		if (params.getType () != XmlRpc::XmlRpcValue::TypeArray)
-			throwErrorType (params.getType (), "array");
+		if (_params.getType () != XmlRpc::XmlRpcValue::TypeArray)
+			throwErrorType (_params.getType (), "array");
 
-		param = params[*index];
+		param = _params[*index];
 	} else
-		param = params;
+		param = _params;
 
-	Type<T, container> currentType;
+	Type<T, container> currentType{this};
 
 	if (!currentType.checkType (param.getType ()))
 		throwErrorType (param.getType (), typeid(T).name (), name);
 
-	return currentType.convert (param);
+	container<T> ret;
+
+	try {
+		ret = currentType.convert (param);
+#ifdef TORCH_API
+	} catch (const torch::Error &e) {
+		throw torch::Error ("While processing param " + getFullPath(name?*name:"") + "\n" + e.msg (),e.backtrace (), e.caller ());
+	}
+#else
+	} catch (...) {}
+#endif
+
+	return ret;
 }
 
 template<typename T>
@@ -198,7 +222,7 @@ T NlParams::get (const boost::optional<c_str> &name,
 	return get<T, empty_container> (name, optional_cast<empty_container<T>> (defaultValue), index);
 }
 
-template<typename T, template<typename ...> typename container>
+template<typename T, template<typename ...> class container>
 container<T> NlParams::get (const boost::optional<c_str> &name,
 					   const boost::optional<container<T>> &defaultValue,
 					   const boost::optional<int> &index) const
@@ -217,11 +241,11 @@ T NlParams::get (const boost::optional<c_str> &name,
 			  const boost::optional<T> &defaultValue,
 			  const boost::optional<int> &index) const
 {
-	return get<T, empty_container> (name, values, defaultValue, index);
+	return get<T, empty_container> (name, values, optional_cast<empty_container<T>> (defaultValue), index);
 }
 
 template<typename T>
-T NlParams::enumFind (const std::string &value, const std::vector<c_str> &values, const boost::optional<c_str> &name)
+T NlParams::enumFind (const std::string &value, const std::vector<c_str> &values, const boost::optional<c_str> &name) const
 {
 	auto selected = std::find (values.begin (), values.end (), value);
 
@@ -232,7 +256,7 @@ T NlParams::enumFind (const std::string &value, const std::vector<c_str> &values
 }
 
 
-template<typename T, template<typename ...> typename container>
+template<typename T, template<typename ...> class container>
 container<T> NlParams::get (const boost::optional<c_str> &name,
 					   const std::vector<c_str> &values,
 					   const boost::optional<container<T>> &defaultValue,
@@ -256,17 +280,36 @@ container<T> NlParams::get (const boost::optional<c_str> &name,
 
 inline void NlParams::throwErrorType (XmlRpc::XmlRpcValue::Type gotType,
 							   const std::string &expected,
-							   const boost::optional<c_str> &tagName)
+							   const boost::optional<c_str> &tagName) const
 {
+	std::string displayTagName = getFullPath (tagName.has_value () ? *tagName: "<unnamed>");
+	if (gotType == XmlRpc::XmlRpcValue::TypeInvalid)
+		throwErrorResolution (displayTagName);
 	std::stringstream msg;
 
-	msg << "Invalid datatype in tag '" << (tagName.has_value () ? *tagName: "<unnamed>") << "'. "
+	msg << "Invalid datatype in tag '" << displayTagName << "'. "
 	    << "Got " << xmlRpcErrorStrings[(int) gotType] << " for param of type " << expected << ".";
 
 	throw XmlRpc::XmlRpcException (msg.str ());
 }
 
-inline void NlParams::throwErrorEnum(const std::string &value, const boost::optional<c_str> &tagName)
+inline void NlParams::throwErrorResolution (const std::string &name) const {
+	std::stringstream msg;
+
+	msg << "Parameter '" << name << "' could not be found";
+
+	throw XmlRpc::XmlRpcException (msg.str ());
+}
+
+inline std::string NlParams::getFullPath (const std::string &base) const
+{
+	if (_parent == nullptr)
+		return "/" + _name + "/" + base;
+
+	return _parent->getFullPath (_name) + "/" + base;
+}
+
+inline void NlParams::throwErrorEnum (const std::string &value, const boost::optional<c_str> &tagName) const
 {
 	std::stringstream msg;
 
@@ -275,65 +318,74 @@ inline void NlParams::throwErrorEnum(const std::string &value, const boost::opti
 	throw XmlRpc::XmlRpcException (msg.str());
 }
 
-inline NlParams::NlParams (XmlRpc::XmlRpcValue &_params):
-	 params(_params)
-{}
-
-inline NlParams::NlParams (const XmlRpc::XmlRpcValue &&_params):
-	 params(_params)
-{}
-
-inline void NlParams::setParams (XmlRpc::XmlRpcValue &_params) {
-	params = _params;
+inline NlParams::NlParams (const XmlRpc::XmlRpcValue &params, const std::string &name, const NlParams *parent):
+	 _params(params),
+	 _name(name),
+	 _parent(parent)
+{
 }
 
-inline NlParams &NlParams::operator = (XmlRpc::XmlRpcValue &_params)
+inline void NlParams::setParams (XmlRpc::XmlRpcValue &params) {
+	_params = params;
+}
+
+inline NlParams &NlParams::operator = (XmlRpc::XmlRpcValue &params)
 {
-	setParams (_params);
+	setParams (params);
 
 	return *this;
 }
 
 /* Standard types: literals and strings */
 
-template<typename T>
-struct NlParams::Type<T, empty_container> {
+template<typename T, template<typename ...> class container>
+struct Type {
 	static bool checkType (XmlRpc::XmlRpcValue::Type type);
-	static empty_container<T> convert (XmlRpc::XmlRpcValue &param);
+	container<T> convert (XmlRpc::XmlRpcValue &param) const;
+
+	const NlParams *const _parent;
+};
+
+template<typename T>
+struct Type<T, empty_container> {
+	static bool checkType (XmlRpc::XmlRpcValue::Type type);
+	empty_container<T> convert (XmlRpc::XmlRpcValue &param) const;
+
+	const NlParams *const _parent;
 };
 
 template<>
-inline bool NlParams::Type<int>::checkType (XmlRpc::XmlRpcValue::Type type) {
+inline bool Type<int>::checkType (XmlRpc::XmlRpcValue::Type type) {
 	return type == XmlRpc::XmlRpcValue::TypeInt;
 }
 
 template<>
-inline bool NlParams::Type<bool>::checkType (XmlRpc::XmlRpcValue::Type type) {
+inline bool Type<bool>::checkType (XmlRpc::XmlRpcValue::Type type) {
 	return type == XmlRpc::XmlRpcValue::TypeBoolean;
 }
 
 template<>
-inline bool NlParams::Type<std::string>::checkType (XmlRpc::XmlRpcValue::Type type) {
+inline bool Type<std::string>::checkType (XmlRpc::XmlRpcValue::Type type) {
 	return type == XmlRpc::XmlRpcValue::TypeString;
 }
 
 template<>
-inline bool NlParams::Type<double>::checkType (XmlRpc::XmlRpcValue::Type type) {
+inline bool Type<double>::checkType (XmlRpc::XmlRpcValue::Type type) {
 	return Type<int>::checkType (type) ||
 		  (type == XmlRpc::XmlRpcValue::TypeDouble);
 }
 template<>
-inline bool NlParams::Type<float>::checkType (XmlRpc::XmlRpcValue::Type type) {
+inline bool Type<float>::checkType (XmlRpc::XmlRpcValue::Type type) {
 	return Type<double>::checkType (type);
 }
 
 template<typename T>
-empty_container<T> NlParams::Type<T>::convert (XmlRpc::XmlRpcValue &param) {
+empty_container<T> Type<T>::convert (XmlRpc::XmlRpcValue &param) const {
 	return static_cast<T> (param);
 }
 
 template<>
-inline empty_container<double> NlParams::Type<double>::convert (XmlRpc::XmlRpcValue &param) {
+inline empty_container<double> Type<double>::convert (XmlRpc::XmlRpcValue &param) const {
 	switch (param.getType ()) {
 	case XmlRpc::XmlRpcValue::TypeInt:
 		return static_cast<double> (static_cast<int> (param));
@@ -343,33 +395,86 @@ inline empty_container<double> NlParams::Type<double>::convert (XmlRpc::XmlRpcVa
 }
 
 template<>
-inline empty_container<float> NlParams::Type<float>::convert (XmlRpc::XmlRpcValue &param) {
-	return static_cast<float> (Type<double>::convert(param));
+inline empty_container<float> Type<float>::convert (XmlRpc::XmlRpcValue &param) const {
+	Type<double> doubleType{_parent};
+	return static_cast<float> (doubleType.convert (param));
 }
+
+#ifdef TORCH_API
+template<>
+inline bool Type<torch::Tensor>::checkType (XmlRpc::XmlRpcValue::Type type) {
+	return Type<int>::checkType (type)
+		  || Type<float>::checkType (type)
+		  || (type == XmlRpc::XmlRpcValue::TypeArray);
+}
+
+template<>
+inline empty_container<torch::Tensor> Type<torch::Tensor>::convert (XmlRpc::XmlRpcValue &param) const {
+	switch (param.getType ()) {
+	case XmlRpc::XmlRpcValue::TypeInt:
+	case XmlRpc::XmlRpcValue::TypeDouble: {
+		float value = Type<double> {_parent}.convert (param);
+		return torch::tensor ({value}, torch::kFloat);
+	}
+	case XmlRpc::XmlRpcValue::TypeArray: {
+		int size = param.size ();
+		torch::Tensor tensor;
+		for (int i = 0; i < size; i++) {
+			torch::Tensor inner = _parent->get<torch::Tensor, empty_container> (param, boost::none, i);
+			if (i == 0) {
+				std::vector<int64_t> sizes{size};
+				sizes.insert (sizes.end (), inner.sizes ().begin (), inner.sizes().end ());
+
+				tensor = torch::empty (sizes, inner.options ());
+			} // if subsequent elements have different number of elements an exception is raised directly by torch
+
+			tensor[i] = inner;
+		}
+		return tensor.squeeze();
+	}
+	}
+}
+#endif // TORCH_API
 
 /* Container types */
 
 template<typename T>
-struct NlParams::Type<T, std::vector> {
+struct Type<T, std::vector> {
 	static bool checkType (XmlRpc::XmlRpcValue::Type type);
-	std::vector<T> convert (XmlRpc::XmlRpcValue &param);
+	std::vector<T> convert (XmlRpc::XmlRpcValue &param) const;
+
+	const NlParams *const _parent;
 };
 
 template<typename T>
-bool NlParams::Type<T, std::vector>::checkType (XmlRpc::XmlRpcValue::Type type) {
+bool Type<T, std::vector>::checkType (XmlRpc::XmlRpcValue::Type type) {
 	return type == XmlRpc::XmlRpcValue::TypeArray;
 }
 
 template<typename T>
-std::vector<T> NlParams::Type<T, std::vector>::convert (XmlRpc::XmlRpcValue &param)
+std::vector<T> Type<T, std::vector>::convert (XmlRpc::XmlRpcValue &param) const
 {
 	std::vector<T> array(param.size ());
 
 	for (int i = 0; i < param.size (); i++)
-		array[i] = get<T, empty_container> (param, boost::none, i);
+		array[i] = _parent->get<T, empty_container> (param, boost::none, i);
 
 	return array;
 }
+
+//#ifdef TORCH_API
+
+
+
+//#endif
+
+
+
+
+
+
+
+
 
 /* empty_container definitions */
 
@@ -377,6 +482,11 @@ template<typename T>
 empty_container<T>::empty_container (const T &_value):
 	 value({_value})
 {}
+
+template<typename T>
+empty_container<T>::empty_container (size_t size) {
+	assert (size == 1 && "Invalid initialization of empty_container");
+}
 
 template<typename T>
 empty_container<T>::operator T() {

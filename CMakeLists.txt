@@ -21,7 +21,7 @@ include_directories(
 add_executable (example
 	example/example_node.cpp
 	example/example_modflow.cpp)
-target_link_libraries (example ${catkin_LIBRARIES})
+target_link_libraries (example dl ${catkin_LIBRARIES})
 
 add_library (nlib src/nlib.cpp)
 

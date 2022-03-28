@@ -7,6 +7,9 @@
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
 #include <boost/optional.hpp>
+#include <map>
+#include <sstream>
+#include <dlfcn.h>
 
 /** @file nlutils.h
  *  @author Nicola Lissandrini
@@ -44,6 +47,13 @@ namespace nlib {
 /// @brief Print calling function and current file and line
 /// @ingroup qdt
 #define QUA {std::cout << "\e[33mReached " << __PRETTY_FUNCTION__ << "\e[0m:" << __LINE__ << std::endl; }
+#define WAIT_GDB {volatile int __done = 0; while (!__done) sleep(1);}
+template<typename T>
+std::string getFcnName (T functionAddress) {
+	Dl_info info;
+	dladdr (reinterpret_cast<void *>(functionAddress), &info);
+	return abi::__cxa_demangle(info.dli_sname, NULL, NULL, NULL);
+}
 
 /**
  * @section Shared ptr tools
@@ -160,7 +170,7 @@ public:
 	bool isProcessed () const {
 		return !updated;
 	}
-	bool isReady () const {
+	bool all () const {
 		for (typename std::map<T, Flag>::const_iterator it = flags.begin (); it != flags.end (); it++)
 			if (!it->second.get ())
 				return false;

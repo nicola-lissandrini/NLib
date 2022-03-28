@@ -6,6 +6,7 @@
 #include <set>
 #include "nl_params.h"
 #include "nl_utils.h"
+#include <cxxabi.h>
 
 /**
  * @file nl_modflow.h
@@ -22,7 +23,7 @@ class NlSources;
 class NlSinks;
 
 template<typename ...T>
-using Slot = std::function<void(const T &...)>;
+using Slot = std::function<void(uint, const T &...)>;
 
 /**
  * @defgroup modflow NlModFlow: a graph based modular interface
@@ -59,18 +60,18 @@ public:
 	Channel (const Channel &) = default;
 	Channel () = default;
 
-	   /// @brief Get unique identifier of the channel
+	  /// @brief Get unique identifier of the channel
 	ChannelId id () const;
 
-	   /// @brief Get name of the channel
+	  /// @brief Get name of the channel
 	const std::string &name () const;
 
-	   /// @brief Check whether supplied type is compatible with Channel type
-	   /// @tparam T Type(s) to check Channel-type with
+	  /// @brief Check whether supplied type is compatible with Channel type
+	  /// @tparam T Type(s) to check Channel-type with
 	template<typename ...T>
 	bool checkType () const;
 
-	   /// @brief Check whether caller is actually the owner of the channel
+	  /// @brief Check whether caller is actually the owner of the channel
 	bool checkOwnership (const NlModule *caller) const;
 
 	DEF_SHARED(Channel)
@@ -176,6 +177,7 @@ private:
 protected:
 	/// @brief Pointer to NlModFlow handler
 	NlModFlow *const _modFlow;
+	uint _lastDepth;
 
 private:
 	std::set<ChannelId> _disablingChannels;
@@ -242,7 +244,7 @@ public:
 	DEF_SHARED (NlSources)
 
 private:
-	// Sources do not receive connections
+	// Sources cannot receive connections
 	using NlModule::requestConnection;
 };
 /**
@@ -251,7 +253,7 @@ private:
  * nor emit regular events but create sink channels that are connected to parent object's methods
  * @ingroup modflow
  */
-class NlSinks : public NlModule
+class NlSinks final : public NlModule
 {
 public:
 	/**
@@ -323,7 +325,7 @@ private:
  */
 class SerializedSlot
 {
-	using SerializedFcn = std::function<void(const void *)>;
+	using SerializedFcn = std::function<void(uint, const void *)>;
 
 	template<typename ...T>
 	std::enable_if_t<(sizeof... (T) <= 1)>
@@ -343,10 +345,14 @@ public:
 	 */
 	template<typename ...T>
 	SerializedSlot (const Slot<T...> &slt,
+				 const Channel &channel,
+				 const std::string &slotName,
 				 std::enable_if_t<(sizeof...(T) <= 1)> * = 0);
 
 	template<typename ...T>
 	SerializedSlot (const Slot<T...> &slt,
+				 const Channel &channel,
+				 const std::string &slotName,
 				 std::enable_if_t<(sizeof...(T) > 1)> * = 0);
 
 	/**
@@ -356,14 +362,21 @@ public:
 	 */
 	template<typename ...T>
 	std::enable_if_t<(sizeof... (T) <= 1)>
-	    invoke (const T &...arg) const;
+	    invoke (int depth, const T &...arg) const;
 
 	template<typename ...T>
 	std::enable_if_t<(sizeof... (T) > 1)>
-	    invoke (const T &...arg) const;
+	    invoke (int depth, const T &...arg) const;
+
+	std::string name () const {
+		return _name;
+	}
 
 	DEF_SHARED (SerializedSlot)
+
 private:
+	std::string _name;
+	Channel _channel;
 	SerializedFcn serialized;
 };
 
@@ -453,11 +466,11 @@ protected:
 	template<class DerivedModule, typename ...Args>
 	typename DerivedModule::Ptr
 	    loadModule (Args &&...args);
+
 	/**
 	 * @brief Method to be overridden to specifiy the modules to be loaded via @ref loadModule
 	 */
 	virtual void loadModules () = 0;
-
 
 	/**
 	 * @brief Declare a new channel of type @p T. The channel is owned by module @p owner,
@@ -485,10 +498,11 @@ protected:
 	 * - If the channel is sink, it is bound to the external calling object.
 	 * Achieve this by calling @ref NlSinks::connectToSink
 	 * @param channel Channel data
+	 * @param name Connection name
 	 * @param slot Function object of type void(T)
 	 */
 	template<typename ...T>
-	void createConnection (const Channel &channel, const Slot<T...> &slot);
+	void createConnection (const Channel &channel, const Slot<T...> &slot, const std::string &name);
 
 	/**
 	 * @brief Emit an event on @p channel. This will call the corresponding
@@ -502,16 +516,23 @@ protected:
 	 * @param caller NlModule that is emitting event
 	 */
 	template<typename ...T>
-	void emit (const Channel &channel, const NlModule *caller, const T &...value);
+	void emit (const Channel &channel, const NlModule *caller, int depth, const T &...value);
 
 	/**
 	 * @brief Emit an event on a channel itentified by its name via @ref resolveChannel
 	 * @see emit
 	 */
 	template<typename ...T>
-	void emit (const std::string &channelName, const NlModule *caller, const T &...value);
+	void emit (const std::string &channelName, const NlModule *caller, int depth, const T &...value);
+
+	/**
+	 * @brief Print to std output debug info on function calls
+	 * @param debug toggle debug
+	 */
+	void setDebug (bool debug);
 
 private:
+	bool _debug;
 	ChannelId _channelsSeq;
 	NlSources::Ptr _sources;
 	NlSinks::Ptr _sinks;
@@ -578,53 +599,62 @@ bool Channel::checkType () const {
 
 template<typename ...T>
 SerializedSlot::SerializedSlot (const Slot<T...> &slt,
-						  std::enable_if_t<(sizeof...(T) <= 1)> *)  {
+						  const Channel &channel,
+						  const std::string &slotName,
+						  std::enable_if_t<(sizeof...(T) <= 1)> *):
+	 _channel(channel)
+{
+	_name = slotName;
 	serialize (slt);
 }
 
 template<typename ...T>
 SerializedSlot::SerializedSlot (const Slot<T...> &slt,
-						  std::enable_if_t<(sizeof...(T) > 1)> *) {
+						  const Channel &channel,
+						  const std::string &slotName,
+						  std::enable_if_t<(sizeof...(T) > 1)> *):
+	 _channel(channel)
+{
+	_name = slotName;
 	serialize (slt, std::make_index_sequence<sizeof...(T)> ());
 }
 
 template<typename ...T>
 std::enable_if_t<(sizeof...(T) <= 1)>
     SerializedSlot::serialize (const Slot<T...> &slt) {
-	serialized = [&slt] (const void *arg) {
-		slt(*reinterpret_cast<const T *> (arg) ...);
+	serialized = [slt] (int depth, const void *arg) {
+		slt(depth, *reinterpret_cast<const T *> (arg) ...);
 	};
 }
 
 template<typename ...T, size_t ...is>
 std::enable_if_t<(sizeof...(T) > 1)>
     SerializedSlot::serialize (const Slot<T...> &slt, std::index_sequence<is...>) {
-	serialized = [&slt] (const void *arg) {
-		// eh
-		auto argTuple = *reinterpret_cast<const std::tuple<const T *...> *> (arg);
-		slt(*std::get<is> (argTuple) ...);
+	serialized = [slt] (int depth, const void *arg) {
+		auto argTuple = *reinterpret_cast<const std::tuple<T...> *> (arg);
+		slt(depth, std::get<is> (argTuple) ...);
 	};
 }
 
 template<typename ...T>
 std::enable_if_t<(sizeof...(T) > 1)>
-    SerializedSlot::invoke (const T &...arg) const {
-	auto data = std::tuple<const T *...> (&arg...);
-	serialized (reinterpret_cast<const void *> (&data));
+    SerializedSlot::invoke (int depth, const T &...arg) const {
+	auto data = std::tuple<T...> (arg...);
+	serialized (depth, reinterpret_cast<const void *> (&data));
 }
 
 
 template<typename ...T>
 std::enable_if_t<(sizeof...(T) <= 1)>
-    SerializedSlot::invoke (const T &...arg) const {
-	serialized (reinterpret_cast<const void *> (&arg) ...);
+    SerializedSlot::invoke (int depth, const T &...arg) const {
+	serialized (depth, reinterpret_cast<const void *> (&arg) ...);
 }
 
 
 template<>
-std::enable_if_t<true>
-inline SerializedSlot::invoke () const {
-	serialized (nullptr);
+inline std::enable_if_t<true>
+    SerializedSlot::invoke (int depth) const {
+	serialized (depth, nullptr);
 }
 
 inline NlModFlow::NlModFlow ():
@@ -634,9 +664,7 @@ inline NlModFlow::NlModFlow ():
 inline void NlModFlow::finalize()
 {
 	for (const NlModule::Ptr &module : _modules) {
-		try {
-			module->initParams (_nlParams[module->name ()]);
-		} catch (...) {}
+		module->initParams (_nlParams[module->name ()]);
 
 		if (!module->lateConfiguration ())
 			module->setupNetwork ();
@@ -650,9 +678,9 @@ std::enable_if_t<std::is_base_of<NlSources, DerivedSources>::value &&
 			  std::is_base_of<NlSinks, DerivedSinks>::value>
     NlModFlow::init (const NlParams &nlParams)
 {
+	_nlParams = nlParams;
 	_sources = loadModule<DerivedSources> ();
 	_sinks = loadModule<DerivedSinks> ();
-	_nlParams = nlParams;
 
 	loadModules ();
 }
@@ -676,31 +704,66 @@ inline Channel NlModFlow::resolveChannel(const std::string &name) {
 	return _channelNames[name];
 }
 
+inline void NlModFlow::setDebug(bool debug) {
+	_debug = debug;
+}
+
 template<typename ...T>
-void NlModFlow::createConnection (const Channel &channel, const Slot<T...> &slot)
+void NlModFlow::createConnection (const Channel &channel, const Slot<T...> &slot, const std::string &name)
 {
-	SerializedSlot serializedSlot(slot);
+	SerializedSlot serializedSlot(slot, channel, name);
 
 	_connections[channel.id ()].push_back (serializedSlot);
+}
+
+inline void debugTrackEmit (int depth, const Channel &channel, const NlModule *caller, int connectionsCount) {
+
+	std::string connectionsStr = "(" + std::to_string (connectionsCount) + " connection" + (connectionsCount > 1 ? "s" : "") + ")";
+	std::cout << (depth == 0 ? "\n" : "")
+			<< "\e[33m[ModFlow] [" << printTime(std::chrono::system_clock::now ()) << "]\e[0m "
+			<< std::string (depth, '+' ) << (depth > 0 ? " " : "")
+			<< "Module \e[32m" << caller->name ()
+			<< "\e[0m emitted \e[93m" << channel.name () << "\e[0m "
+			<< (connectionsCount > 0? connectionsStr : "(no connections)")
+			<< std::endl;
+}
+
+inline std::string truncateArguments (const std::string &fcn) {
+	return fcn.substr (0, fcn.find ('('));
+}
+
+inline void debugConnection (int depth, const NlModule *caller, const SerializedSlot &slot) {
+	std::cout << "\e[33m[ModFlow] [" << printTime(std::chrono::system_clock::now ()) << "]\e[0m "
+			<< std::string (depth, '+') << (depth > 0 ? " " : "")
+			<< "\e[32m" << caller->name () << "\e[0m"
+			<< " calling slot \e[36m" << truncateArguments (slot.name ()) << "\e[0m" << std::endl;
 }
 
 template<typename ...T>
 void NlModFlow::emit (const Channel &channel,
 				  const NlModule *caller,
-				  const T &...value) {
+				  int depth,
+				  const T &...value)
+{
 	assert (channel.checkType<T...> () && "Channel type mismatch");
 	assert (channel.checkOwnership (caller) && "Cannot emit on channels created by different modules");
 
+	if (_debug)
+		debugTrackEmit (depth, channel, caller, _connections[channel.id ()].size ());
+
 	for (const SerializedSlot &currentSlot : _connections[channel.id ()]) {
-		currentSlot.invoke<T...> (value...);		
+		if (_debug)
+			debugConnection (depth, caller, currentSlot);
+		currentSlot.invoke<T...> (depth, value...);
 	}
 }
 
 template<typename ...T>
 void NlModFlow::emit (const std::string &channelName,
 				  const NlModule *caller,
+				  int depth,
 				  const T &...value) {
-	emit (resolveChannel (channelName), caller, value...);
+	emit (resolveChannel (channelName), caller, depth, value...);
 }
 
 template<typename ...T>
@@ -723,11 +786,11 @@ template<typename ...T, class ParentClass>
 void NlSinks::declareSink (const std::string &name, void (ParentClass::*parentSlot)(T...) const, const ParentClass *parent)
 {
 	Channel channel = _modFlow->createChannel<T...> (name, this);
-	Slot<T...> boundSlot = [parent, parentSlot] (T... value) {
+	Slot<T...> boundSlot = [parent, parentSlot] (int depth, T... value) {
 		(parent->*parentSlot)(value...);
 	};
 
-	_modFlow->createConnection (channel, boundSlot);
+	_modFlow->createConnection (channel, boundSlot, getFcnName(parentSlot));
 }
 
 template<typename ...T>
@@ -738,11 +801,12 @@ void NlSinks::connectToSink (const std::string &channelName, const std::string &
 
 	assert (channel.checkType<T...> () && "Channel type mismatch");
 
-	Slot<T...> forwardSlot = [this, sink] (const T &...value) {
+	Slot<T...> forwardSlot = [this, sink] (int depth, const T &...value) {
+		this->_lastDepth = depth;
 		this->emit (sink, value...);
 	};
 
-	_modFlow->createConnection (channel, forwardSlot);
+	_modFlow->createConnection (channel, forwardSlot, "<forward to sink " + sink.name () + ">");
 }
 
 template<typename ...T>
@@ -760,24 +824,26 @@ std::enable_if_t<std::is_base_of<NlModule, M>::value>
     NlModule::requestConnection (const std::string &channelName, void (M::*slot)(T))
 {
 	Channel channel = _modFlow->resolveChannel (channelName);
-	Slot<T> boundSlot = [this, slot] (T arg) {
+	Slot<T> boundSlot = [this, slot] (int depth, T arg) {
 		M *child = dynamic_cast<M*> (this);
+		this->_lastDepth = depth;
 		if (this->isEnabled ())
 			(child->*slot) (arg);
 	};
 
-	_modFlow->createConnection (channel, boundSlot);
+	_modFlow->createConnection (channel, boundSlot, getFcnName (slot));
 }
 
 inline void NlModule::requestEnablingChannel (const std::string &channelName)
 {
 	Channel enablingChannel = _modFlow->resolveChannel (channelName);
-	Slot<> boundEnableSlot = [this, enablingChannel] () {
+	Slot<> boundEnableSlot = [this, enablingChannel] (int depth) {
+		this->_lastDepth = depth;
 		this->setEnabled (enablingChannel.id ());
 	};
 
 	_disablingChannels.insert (enablingChannel.id ());
-	_modFlow->createConnection (enablingChannel, boundEnableSlot);
+	_modFlow->createConnection (enablingChannel, boundEnableSlot, "<enabling " + enablingChannel.name () + "> [" + name() + "]");
 }
 
 inline void NlModule::setEnabled (ChannelId enablingChannelId) {
@@ -797,7 +863,8 @@ inline Channel NlModule::createChannel (const std::string &name) {
 inline NlModule::NlModule (NlModFlow *modFlow,
 					  const std::string &name):
 	 _modFlow(modFlow),
-	 _name(name)
+	 _name(name),
+	 _lastDepth(-1)
 {
 }
 
@@ -807,12 +874,12 @@ inline const std::string &NlModule::name () const {
 
 template<typename ...T>
 void NlModule::emit (const Channel &channel, const T &...value) {
-	_modFlow->emit (channel, this, value...);
+	_modFlow->emit (channel, this, _lastDepth + 1, value...);
 }
 
 template<typename ...T>
 void NlModule::emit (const std::string &channelName, const T &...value) {
-	_modFlow->emit (channelName, this, value...);
+	_modFlow->emit (channelName, this, _lastDepth + 1, value...);
 }
 
 

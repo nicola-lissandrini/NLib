@@ -36,7 +36,7 @@ protected:
 			   void (Derived::*fp)(T),
 			   const ros::TransportHints &transportHints = ros::TransportHints ());
 
-	   // Add subscriber with topic names from standard params
+	  // Add subscriber with topic names from standard params
 	template<typename T>
 	void addSub (const std::string &name,
 			   uint32_t queueSize,
@@ -49,13 +49,13 @@ protected:
 			   uint32_t queueSize,
 			   bool latch = false);
 
-	   // Add publisher with topic names from standard params
+	  // Add publisher with topic names from standard params
 	template<typename T>
 	void addPub (const std::string &name,
 			   uint32_t queueSize,
 			   bool latch = false);
 
-	   // Create publisher for output manager
+	  // Create publisher for output manager
 	template<typename T>
 	std::shared_ptr<ros::Publisher> createOutput (const std::string &topicPrefix,
 										 const std::string &name,
@@ -83,7 +83,7 @@ protected:
 	int _argc;
 	char **_argv;
 
-private:
+protected:
 	NlModFlow::Ptr _nlModFlow;
 	std::map<std::string, ros::Publisher> _publishers;
 	std::map<std::string, ros::Subscriber> _subscribers;
@@ -156,8 +156,8 @@ using Base = nlib::NlNode<Derived>;\
     private: \
 
 
-		    template<class Derived>
-		    NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uint32_t options):
+		   template<class Derived>
+		   NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uint32_t options):
 	 _name(_name),
 	 _argc(_argc),
 	 _argv(_argv)
@@ -247,12 +247,11 @@ void NlNode<Derived>::initParams ()
 		_nh->getParam (_name, xmlParams);
 
 		if (xmlParams.begin () != xmlParams.end ())
-			_nlParams = xmlParams;
+			_nlParams = {xmlParams, _name};
 
 	}
-
-	   // If no params are loaded, nlParams is empty
-	   // Every trial of getting a param from nlParams will result in an exception
+	 // If no params are loaded, nlParams is empty
+	 // Every trial of getting a param from nlParams will result in an exception
 }
 
 template<class Derived>
@@ -293,6 +292,7 @@ void NlNode<Derived>::init ()
 
 	} catch (const XmlRpc::XmlRpcException &e) {
 		ROS_ERROR_STREAM(e.getMessage ());
+		std::abort ();
 	}
 }
 
