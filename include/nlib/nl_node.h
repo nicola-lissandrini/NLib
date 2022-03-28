@@ -10,15 +10,10 @@
 
 namespace nlib {
 
-template<class Derived>
-struct traits;
 
 template<class Derived>
 class NlNode
 {
-	using DerivedModFlow = typename traits<Derived>::ModFlow;
-	using DerivedSources = typename traits<Derived>::Sources;
-	using DerivedSinks = typename traits<Derived>::Sinks;
 
 public:
 	NlNode (int &argc, char **argv, const std::string &_name, uint32_t options = 0);
@@ -26,6 +21,7 @@ public:
 	int spin ();
 
 protected:
+	template<class DerivedModFlow>
 	void init ();
 	void finalizeModFlow ();
 
@@ -69,8 +65,9 @@ protected:
 	void initParams ();
 	void initROS ();
 
-	std::shared_ptr<DerivedSinks> sinks ();
-	std::shared_ptr<DerivedSources> sources ();
+	NlSinks::Ptr sinks ();
+	NlSources::Ptr sources ();
+
 	Derived &derived () { return static_cast<Derived&> (*this); }
 	const Derived &derived () const { return static_cast<const Derived &> (*this); }
 
@@ -269,18 +266,17 @@ void NlNode<Derived>::initROS ()
 }
 
 template<class Derived>
-std::shared_ptr<typename NlNode<Derived>::DerivedSinks>
-    NlNode<Derived>::sinks() {
-	return _nlModFlow->sinks<DerivedSinks> ();
+NlSinks::Ptr NlNode<Derived>::sinks() {
+	return _nlModFlow->sinks ();
 }
 
 template<class Derived>
-std::shared_ptr<typename NlNode<Derived>::DerivedSources>
-    NlNode<Derived>::sources() {
-	return _nlModFlow->sources<DerivedSources> ();
+NlSources::Ptr NlNode<Derived>::sources() {
+	return _nlModFlow->sources ();
 }
 
 template<class Derived>
+template<class DerivedModFlow>
 void NlNode<Derived>::init ()
 {
 	_nlModFlow = std::make_shared<DerivedModFlow> ();
@@ -288,7 +284,7 @@ void NlNode<Derived>::init ()
 	try {
 		derived().initParams ();
 		derived().initROS ();
-		_nlModFlow->init<DerivedSources, DerivedSinks> (_nlParams);
+		_nlModFlow->init (_nlParams);
 
 	} catch (const XmlRpc::XmlRpcException &e) {
 		ROS_ERROR_STREAM(e.getMessage ());

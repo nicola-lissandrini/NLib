@@ -116,7 +116,6 @@ public:
 	 */
 	virtual void setupNetwork () = 0;
 
-	virtual bool lateConfiguration () const { return false; }
 	DEF_SHARED (NlModule)
 
 protected:
@@ -190,7 +189,7 @@ private:
  * and data on those channels is emitted from external Parent
  * @ingroup modflow
  */
-class NlSources : public NlModule
+class NlSources final : public NlModule
 {
 public:
 	/**
@@ -206,12 +205,12 @@ public:
 	 * @param params NlParams intialized with parentNlParams["sources"]
 	 */
 	virtual void initParams (const NlParams &params) override {};
+
 	/**
 	 * @brief Channel configuration done externally by @ref NlSources::callSource;
 	 * @see NlSources::callSource
 	 */
 	void setupNetwork () override {};
-	bool lateConfiguration () const override { return true; }
 
 	/**
 	 * @brief Declare source channel to be called from external Parent
@@ -247,6 +246,7 @@ private:
 	// Sources cannot receive connections
 	using NlModule::requestConnection;
 };
+
 /**
  *
  * @brief NlSinks is a particular @ref NlModule that do not create regular channels
@@ -264,18 +264,10 @@ public:
 		 NlModule (modFlow, "sinks")
 	{}
 
-	/**
-	 * @brief initParams is optional and often not used
-	 * @param params NlParams intialized with parentNlParams["sources"]
-	 */
-	virtual void initParams (const NlParams &params) override {};
-	/**
-	 * @brief Inherit this method to configure connections between existing channels and sinks. This function is called last
-	 * of all @ref NlModule::setupNetwork methods for other modules of the graph.
-	 * @see NlSinks::connectToSink
-	 */
-	virtual void setupNetwork () override = 0;
-	bool lateConfiguration () const final override { return true; }
+	  // Sink network is setup from parent
+	void setupNetwork () override {};
+	  // Sink do not need parameters
+	void initParams (const NlParams &params) override {};
 
 	/**
 	 * @brief Create special Sink channel and connect it to @p parent's @p slot
@@ -289,29 +281,7 @@ public:
 				   void (ParentClass::*parentSlot)(T...) const,
 				   const ParentClass *parent);
 
-
-
-
 	DEF_SHARED(NlSinks)
-
-protected:
-	/**
-	 * @brief Automatically emit @p sinkName signal when an event on @p channelName is received
-	 * @param channelName General channel name created by any module.
-	 * @param sinkName Sink name to which the general channel is to be connected, owned by a @ref NlSinks
-	 */
-	template<typename ...T>
-	void connectToSink (const std::string &channelName,
-					const std::string &sinkName);
-
-	/**
-	 * @brief Ensure at start up that the parent has declared a sink named @p sinkName with type @p T. This is not needed
-	 * when directly connecting channels to sinks.
-	 * @tparam T Type(s) of the sink to be declar
-	 * @param sinkName Name of sink to be declared by parent
-	 */
-	template<typename ...T>
-	Channel requireSink (const std::string &sinkName);
 
 private:
 	// Sinks can only emit to sink channels
@@ -409,19 +379,13 @@ public:
 	NlModFlow ();
 
 	/**
-	 * @brief Load sources and sink modules (see @ref loadModule) according to the specified
-	 * @p DerivedSources and @p DerivedSinks. It also calls @ref loadModules that shall be implemented
+	 * @brief Load sources and sink modules (see @ref loadModule). It calls @ref loadModules that shall be implemented
 	 * in a child class of @ref NlModFlow specifying the modules to be loaded, via @ref loadModule.
-	 * @tparam DerivedSources Child class inheriting from @ref NlSources or NlSources itself.
-	 * @tparam DerivedSinks Child class inheriting from @ref NlSinks, which must override @ref NlSinks::setupNetwork "setupNetwork"
 	 * specifying the connections between standard channels and sink channels
 	 * @param nlParams @ref NlParams object containing all network parameters
 	 * @todo Make @p nlParams optional
 	 */
-	template<class DerivedSources, class DerivedSinks>
-	std::enable_if_t<std::is_base_of<NlSources, DerivedSources>::value &&
-				  std::is_base_of<NlSinks, DerivedSinks>::value>
-	    init (const NlParams &nlParams);
+	void init (const NlParams &nlParams);
 	/**
 	 * @brief To be called after declaring sources and sinks. For each loaded module, in order, call @ref NlModule::initParams "initParams" and @ref NlModule::setupNetwork "setupNetwork",
 	 * intializing each module with parameters and the channels configuration.
@@ -430,24 +394,15 @@ public:
 
 	/**
 	 * @brief Get sources object
-	 * @tparam DerivedSources Actual class derived from @ref NlSources
-	 * @return Pointer to the sources module, downcasted to the child source class @p DerivedSources
+	 * @return Pointer to the sources module
 	 */
-	template<class DerivedSources>
-	std::enable_if_t<std::is_base_of<NlSources, DerivedSources>::value,
-				  std::shared_ptr<DerivedSources>>
-	    sources ();
-
+	NlSources::Ptr sources ();
 
 	/**
 	 * @brief Get sinks object
-	 * @tparam DerivedSinks Actual class derived from @ref NlSinks
-	 * @return Pointer to the sinks module, downcasted to the child source class @p DerivedSinks
+	 * @return Pointer to the sinks module
 	 */
-	template<class DerivedSinks>
-	std::enable_if_t<std::is_base_of<NlSinks, DerivedSinks>::value,
-				  std::shared_ptr<DerivedSinks>>
-	    sinks ();
+	NlSinks::Ptr sinks ();
 
 	DEF_SHARED (NlModFlow)
 
@@ -542,18 +497,12 @@ private:
 	NlParams _nlParams;
 };
 
-template<class DerivedSources>
-std::enable_if_t<std::is_base_of<NlSources, DerivedSources>::value,
-			  std::shared_ptr<DerivedSources>>
-    NlModFlow::sources () {
-	return std::dynamic_pointer_cast<DerivedSources> (_sources);
+NlSources::Ptr NlModFlow::sources () {
+	return _sources;
 }
 
-template<class DerivedSinks>
-std::enable_if_t<std::is_base_of<NlSinks, DerivedSinks>::value,
-			  std::shared_ptr<DerivedSinks>>
-    NlModFlow::sinks() {
-	return std::dynamic_pointer_cast<DerivedSinks> (_sinks);
+NlSinks::Ptr NlModFlow::sinks () {
+	return _sinks;
 }
 
 
@@ -665,22 +614,15 @@ inline void NlModFlow::finalize()
 {
 	for (const NlModule::Ptr &module : _modules) {
 		module->initParams (_nlParams[module->name ()]);
-
-		if (!module->lateConfiguration ())
-			module->setupNetwork ();
+		module->setupNetwork ();
 	}
-
-	_sinks->setupNetwork ();
 }
 
-template<class DerivedSources, class DerivedSinks>
-std::enable_if_t<std::is_base_of<NlSources, DerivedSources>::value &&
-			  std::is_base_of<NlSinks, DerivedSinks>::value>
-    NlModFlow::init (const NlParams &nlParams)
+void NlModFlow::init (const NlParams &nlParams)
 {
 	_nlParams = nlParams;
-	_sources = loadModule<DerivedSources> ();
-	_sinks = loadModule<DerivedSinks> ();
+	_sources = loadModule<NlSources> ();
+	_sinks = loadModule<NlSinks> ();
 
 	loadModules ();
 }
@@ -704,7 +646,7 @@ inline Channel NlModFlow::resolveChannel(const std::string &name) {
 	return _channelNames[name];
 }
 
-inline void NlModFlow::setDebug(bool debug) {
+inline void NlModFlow::setDebug (bool debug) {
 	_debug = debug;
 }
 
@@ -791,32 +733,6 @@ void NlSinks::declareSink (const std::string &name, void (ParentClass::*parentSl
 	};
 
 	_modFlow->createConnection (channel, boundSlot, getFcnName(parentSlot));
-}
-
-template<typename ...T>
-void NlSinks::connectToSink (const std::string &channelName, const std::string &sinkName)
-{
-	Channel channel = _modFlow->resolveChannel (channelName);
-	Channel sink = _modFlow->resolveChannel (sinkName);
-
-	assert (channel.checkType<T...> () && "Channel type mismatch");
-
-	Slot<T...> forwardSlot = [this, sink] (int depth, const T &...value) {
-		this->_lastDepth = depth;
-		this->emit (sink, value...);
-	};
-
-	_modFlow->createConnection (channel, forwardSlot, "<forward to sink " + sink.name () + ">");
-}
-
-template<typename ...T>
-Channel NlSinks::requireSink (const std::string &sinkName)
-{
-	Channel sink = _modFlow->resolveChannel (sinkName);
-
-	assert (sink.checkType<T...> () && "Channel type mismatch");
-
-	return sink;
 }
 
 template<typename T, typename M>
