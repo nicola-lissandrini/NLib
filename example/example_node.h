@@ -6,19 +6,12 @@
 
 #include "example_modflow.h"
 
-class ExampleNode;
-
-template<>
-struct nlib::traits<ExampleNode>
-{
-	using ModFlow = ExampleModFlow;
-	using Sources = NlSources;
-	using Sinks = ExampleSinks;
-};
 
 class ExampleNode : public nlib::NlNode<ExampleNode>
 {
 	NL_NODE(ExampleNode)
+
+	using ModFlow = ExampleModFlow;
 
 public:
 	ExampleNode (int &argc, char **argv, const std::string &name, uint32_t options = 0);
@@ -27,7 +20,7 @@ public:
 	void initParams ();
 
 	void stringCallback (const std_msgs::String &stringMsg);
-	void publishString (const std::string &value) const;
+	void publishString (const std::string &value);
 
 	DEF_SHARED (ExampleNode)
 

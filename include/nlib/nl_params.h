@@ -84,25 +84,31 @@ class NlParams
 	using c_str = const char *;
 	using XmlParamsPtr = std::shared_ptr<XmlRpc::XmlRpcValue>;
 
-	XmlRpc::XmlRpcValue resolveName(const boost::optional<c_str> &name) const;
+	XmlRpc::XmlRpcValue resolveName(const boost::optional<std::string> &name) const;
 
 	void throwErrorType (XmlRpc::XmlRpcValue::Type gotType,
 					 const std::string &expected,
-					 const boost::optional<c_str> &tagName = boost::none) const;
+					 const boost::optional<std::string> &tagName = boost::none) const;
 
 	void throwErrorEnum (const std::string &value,
-					 const boost::optional<c_str> &tagName = boost::none) const;
+					 const boost::optional<std::string> &tagName = boost::none) const;
 
 	void throwErrorResolution (const std::string &name) const;
 
 	template<typename T, template<typename ...> class container>
 	container<T> get (XmlRpc::XmlRpcValue &_params,
-				   const boost::optional<c_str> &name,
+				   const c_str &name,
 				   const boost::optional<int> &index = boost::none) const;
+
+	template<typename T, template<typename ...> class container>
+	container<T> get (XmlRpc::XmlRpcValue &_params,
+				   const boost::optional<std::string> &name = boost::none,
+				   const boost::optional<int> &index = boost::none) const;
+
 	template<typename T>
 	T enumFind (const std::string &value,
-			  const std::vector<c_str> &values,
-			  const boost::optional<c_str> &name) const;
+			  const std::vector<std::string> &values,
+			  const boost::optional<std::string> &name) const;
 
 	std::string getFullPath (const std::string &base) const;
 
@@ -116,29 +122,51 @@ public:
 	NlParams &operator = (const NlParams &) = default;
 	NlParams operator [] (const std::string &name) const;
 
-	   // Overload for literal and string types
+	  // Overload for literal and string types
 	template<typename T>
-	T get (const boost::optional<c_str> &name = boost::none,
+	T get (const c_str &name,
 		  const boost::optional<T> &defaultValue = boost::none,
 		  const boost::optional<int> &index = boost::none) const;
 
-	   // Overload for vectors of literal and string types
+	template<typename T>
+	T get (const boost::optional<std::string> &name,
+		  const boost::optional<T> &defaultValue = boost::none,
+		  const boost::optional<int> &index = boost::none) const;
+
+	  // Overload for vectors of literal and string types
 	template<typename T, template<typename ...> class container>
-	container<T> get (const boost::optional<c_str> &name = boost::none,
+	container<T> get (const c_str &name,
 				   const boost::optional<container<T>> &defaultValue = boost::none,
 				   const boost::optional<int> &index = boost::none) const;
 
-	   // Overload for enums
+	template<typename T, template<typename ...> class container>
+	container<T> get (const boost::optional<std::string> &name,
+				   const boost::optional<container<T>> &deaultValue = boost::none,
+				   const boost::optional<int> &index = boost::none) const;
+
+	  // Overload for enums
 	template<typename T>
-	T get (const boost::optional<c_str> &name,
+	T get (const c_str &name,
 		  const std::vector<c_str> &values,
 		  const boost::optional<T> &defaultValue = boost::none,
 		  const boost::optional<int> &index = boost::none) const;
 
-	   // Overload for vectors of enums
+	template<typename T>
+	T get (const boost::optional<std::string> &name,
+		  const std::vector<std::string> &values,
+		  const boost::optional<T> &defaultValue = boost::none,
+		  const boost::optional<int> &index = boost::none) const;
+
+	  // Overload for vectors of enums
 	template<typename T, template<typename ...> class container>
-	container<T> get (const boost::optional<c_str> &name,
+	container<T> get (const c_str &name,
 				   const std::vector<c_str> &values,
+				   const boost::optional<container<T>> &defaultValue = boost::none,
+				   const boost::optional<int> &index = boost::none) const;
+
+	template<typename T, template<typename ...> class container>
+	container<T> get (const boost::optional<std::string> &name,
+				   const std::vector<std::string> &values,
 				   const boost::optional<container<T>> &defaultValue = boost::none,
 				   const boost::optional<int> &index = boost::none) const;
 
@@ -152,7 +180,7 @@ private:
 	const NlParams *_parent;
 };
 
-inline XmlRpc::XmlRpcValue NlParams::resolveName (const boost::optional<c_str> &name) const
+inline XmlRpc::XmlRpcValue NlParams::resolveName (const boost::optional<std::string> &name) const
 {
 	// Need to resort to pointers due to bad programming of external lib XmlRpcValue
 	const XmlRpc::XmlRpcValue *param = &_params;
@@ -162,7 +190,7 @@ inline XmlRpc::XmlRpcValue NlParams::resolveName (const boost::optional<c_str> &
 
 	boost::filesystem::path namePath(*name);
 
-	   // relative_path: remove leading '/' if any
+	  // relative_path: remove leading '/' if any
 	for (const auto &currentName : namePath.relative_path ()) {
 		const XmlRpc::XmlRpcValue &currentParam = *param;
 
@@ -177,12 +205,21 @@ inline XmlRpc::XmlRpcValue NlParams::resolveName (const boost::optional<c_str> &
 }
 
 inline NlParams NlParams::operator [](const std::string &name) const {
-	return {resolveName (name.c_str ()), name, this};
+	return {resolveName (name), name, this};
+}
+
+
+template<typename T, template<typename ...> class container>
+container<T> NlParams::get (XmlRpc::XmlRpcValue &_params,
+					   const c_str &name,
+					   const boost::optional<int> &index) const
+{
+	return get<T, container> (_params, std::string (name), index);
 }
 
 template<typename T, template<typename ...> class container>
 container<T> NlParams::get (XmlRpc::XmlRpcValue &_params,
-					   const boost::optional<c_str> &name,
+					   const boost::optional<std::string> &name,
 					   const boost::optional<int> &index) const
 {
 	XmlRpc::XmlRpcValue param;
@@ -209,24 +246,38 @@ container<T> NlParams::get (XmlRpc::XmlRpcValue &_params,
 		throw torch::Error ("While processing param " + getFullPath(name?*name:"") + "\n" + e.msg (),e.backtrace (), e.caller ());
 	}
 #else
-	} catch (...) {}
+		} catch (...) {}
 #endif
 
 	return ret;
 }
 
 template<typename T>
-T NlParams::get (const boost::optional<c_str> &name,
+T NlParams::get (const c_str &name,
+			  const boost::optional<T> &defaultValue,
+			  const boost::optional<int> &index) const {
+	return get<T> (std::string(name), defaultValue, index);
+}
+
+template<typename T>
+T NlParams::get (const boost::optional<std::string> &name,
 			  const boost::optional<T> &defaultValue,
 			  const boost::optional<int> &index) const {
 	return get<T, empty_container> (name, optional_cast<empty_container<T>> (defaultValue), index);
 }
 
 template<typename T, template<typename ...> class container>
-container<T> NlParams::get (const boost::optional<c_str> &name,
+container<T> NlParams::get (const c_str &name,
 					   const boost::optional<container<T>> &defaultValue,
 					   const boost::optional<int> &index) const
 {
+	return get<T, container> (std::string(name), defaultValue, index);
+}
+
+template<typename T, template<typename ...> class container>
+container<T> NlParams::get (const boost::optional<std::string> &name,
+					   const boost::optional<container<T>> &defaultValue,
+					   const boost::optional<int> &index) const {
 	XmlRpc::XmlRpcValue param = resolveName (name);
 
 	if (param.getType () == XmlRpc::XmlRpcValue::TypeInvalid && defaultValue.has_value ())
@@ -236,8 +287,16 @@ container<T> NlParams::get (const boost::optional<c_str> &name,
 }
 
 template<typename T>
-T NlParams::get (const boost::optional<c_str> &name,
+T NlParams::get (const c_str &name,
 			  const std::vector<c_str> &values,
+			  const boost::optional<T> &defaultValue,
+			  const boost::optional<int> &index) const {
+	return get<T> (std::string (name), std::vector<std::string> (values.begin (), values.end ()), defaultValue, index);
+}
+
+template<typename T>
+T NlParams::get (const boost::optional<std::string> &name,
+			  const std::vector<std::string> &values,
 			  const boost::optional<T> &defaultValue,
 			  const boost::optional<int> &index) const
 {
@@ -245,7 +304,7 @@ T NlParams::get (const boost::optional<c_str> &name,
 }
 
 template<typename T>
-T NlParams::enumFind (const std::string &value, const std::vector<c_str> &values, const boost::optional<c_str> &name) const
+T NlParams::enumFind (const std::string &value, const std::vector<std::string> &values, const boost::optional<std::string> &name) const
 {
 	auto selected = std::find (values.begin (), values.end (), value);
 
@@ -257,8 +316,17 @@ T NlParams::enumFind (const std::string &value, const std::vector<c_str> &values
 
 
 template<typename T, template<typename ...> class container>
-container<T> NlParams::get (const boost::optional<c_str> &name,
+container<T> NlParams::get (const c_str &name,
 					   const std::vector<c_str> &values,
+					   const boost::optional<container<T>> &defaultValue,
+					   const boost::optional<int> &index) const
+{
+	return get<T, container> (std::string (name), std::vector<std::string> (values.begin (), values.end ()), defaultValue, index);
+}
+
+template<typename T, template<typename ...> class container>
+container<T> NlParams::get (const boost::optional<std::string> &name,
+					   const std::vector<std::string> &values,
 					   const boost::optional<container<T>> &defaultValue,
 					   const boost::optional<int> &index) const
 {
@@ -280,7 +348,7 @@ container<T> NlParams::get (const boost::optional<c_str> &name,
 
 inline void NlParams::throwErrorType (XmlRpc::XmlRpcValue::Type gotType,
 							   const std::string &expected,
-							   const boost::optional<c_str> &tagName) const
+							   const boost::optional<std::string> &tagName) const
 {
 	std::string displayTagName = getFullPath (tagName.has_value () ? *tagName: "<unnamed>");
 	if (gotType == XmlRpc::XmlRpcValue::TypeInvalid)
@@ -309,7 +377,7 @@ inline std::string NlParams::getFullPath (const std::string &base) const
 	return _parent->getFullPath (_name) + "/" + base;
 }
 
-inline void NlParams::throwErrorEnum (const std::string &value, const boost::optional<c_str> &tagName) const
+inline void NlParams::throwErrorEnum (const std::string &value, const boost::optional<std::string> &tagName) const
 {
 	std::stringstream msg;
 
@@ -377,6 +445,24 @@ inline bool Type<double>::checkType (XmlRpc::XmlRpcValue::Type type) {
 template<>
 inline bool Type<float>::checkType (XmlRpc::XmlRpcValue::Type type) {
 	return Type<double>::checkType (type);
+}
+
+template<>
+inline bool Type<Range>::checkType (XmlRpc::XmlRpcValue::Type type) {
+	return type == XmlRpc::XmlRpcValue::TypeStruct;
+}
+
+template<>
+inline empty_container<Range> Type<Range>::convert (XmlRpc::XmlRpcValue &param) const {
+	Range range;
+
+	range.min = _parent->get<float, empty_container> (param["min"],"min");
+	range.max = _parent->get<float, empty_container> (param["max"],"max");
+	try {
+		range.step = _parent->get<float, empty_container> (param["step"],"step");
+	} catch (...) { }
+
+	return range;
 }
 
 template<typename T>
