@@ -502,6 +502,7 @@ private:
 		std::vector<std::string> filterContainsModules;
 		std::vector<std::string> filterExcludeModules;
 	} _debug;
+	
 	ChannelId _channelsSeq;
 	NlSources::Ptr _sources;
 	NlSinks::Ptr _sinks;
@@ -635,7 +636,9 @@ inline void NlModFlow::finalize()
 inline void NlModFlow::init (const NlParams &nlParams)
 {
 	_nlParams = nlParams;
+	
 	initDebugConfiguration ();
+	
 	_sources = loadModule<NlSources> ();
 	_sinks = loadModule<NlSinks> ();
 
@@ -655,7 +658,7 @@ Channel NlModFlow::createChannel (const std::string &name,
 	return newChannel;
 }
 
-inline Channel NlModFlow::resolveChannel(const std::string &name) {
+inline Channel NlModFlow::resolveChannel (const std::string &name) {
 	assert (_channelNames.find (name) != _channelNames.end () && "Channel name does not exist");
 
 	return _channelNames[name];
@@ -668,7 +671,6 @@ inline void NlModFlow::initDebugConfiguration () {
 	_debug.filterExcludeChannels = _nlParams.get<std::string, std::vector> ("mod_flow/debug/filter/exclude_channels");
 	_debug.filterExcludeModules = _nlParams.get<std::string, std::vector> ("mod_flow/debug/filter/exclude_modules");
 }
-
 
 template<typename ...T>
 Channel NlModule::requireSink (const std::string &sinkName)

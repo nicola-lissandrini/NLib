@@ -6,7 +6,7 @@ using namespace nlib;
 ExampleNode::ExampleNode (int &argc, char **argv, const std::string &name, uint32_t options):
 	 Base (argc, argv, name, options)
 {
-	init ();
+	init<ModFlow> ();
 
 	sources()->declareSource<int> ("integer_source");
 	sources()->declareSource<string> ("string_source");
@@ -35,7 +35,7 @@ void ExampleNode::onSynchronousClock (const ros::TimerEvent &timerEvent) {
 	sources()->callSource ("integer_source", 1234);
 }
 
-void ExampleNode::publishString(const std::string &value) const
+void ExampleNode::publishString(const std::string &value)
 {
 	std_msgs::String stringMsg;
 	stringMsg.data = value;

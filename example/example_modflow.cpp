@@ -24,14 +24,9 @@ void Module2::setupNetwork ()
 
 void Module3::setupNetwork()
 {
-	createChannel<string> ("finalized_string");
+	requireSink<string> ("publish_string");
 	requestConnection ("integer_source", &Module3::updateInteger);
 	requestConnection ("processed_string", &Module3::updateString);
-}
-
-void ExampleSinks::setupNetwork ()
-{
-	connectToSink<std::string> ("finalized_string", "publish_string");
 }
 
 void Module1::initParams(const NlParams &nlParams)
@@ -73,7 +68,7 @@ void Module3::updateInteger(int value) {
 void Module3::updateString(const std::string &value) {
 	_string = _string + value;
 	
-	emit ("finalized_string", _string + to_string (_integer));
+	emit ("publish_string", _string + to_string (_integer));
 }
 
 

@@ -15,18 +15,6 @@ public:
 	DEF_SHARED (ExampleModFlow)
 };
 
-class ExampleSinks : public nlib::NlSinks
-{
-public:
-	ExampleSinks (nlib::NlModFlow *modFlow):
-		 nlib::NlSinks (modFlow)
-	{}
-
-	void setupNetwork () override;
-
-	DEF_SHARED (ExampleSinks)
-};
-
 class Module1 : public nlib::NlModule
 {
 	struct Params {
