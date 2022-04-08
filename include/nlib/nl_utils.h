@@ -28,7 +28,7 @@ namespace nlib {
 #define COUTN(var) {std::cout << "\e[33m" << #var << "\e[0m" << std::endl << var << std::endl;}
 /// @brief Print name and value of an expression that is a time point
 /// @ingroup qdt
-#define COUTNT(var) {std::cout << "\e[33m" << #var << "\e[0m" << std::endl << printTime(var) << std::endl;}
+#define COUTNT(var) {std::cout << "\e[33m" << #var << "\e[0m" << std::endl << nlib::printTime(var) << std::endl;}
 /// @brief Print name and shape of expressione
 /// @ingroup qdt
 #define COUTNS(var) {COUTN(var.sizes());}

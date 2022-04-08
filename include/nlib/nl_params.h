@@ -277,8 +277,18 @@ container<T> NlParams::get (const c_str &name,
 template<typename T, template<typename ...> class container>
 container<T> NlParams::get (const boost::optional<std::string> &name,
 					   const boost::optional<container<T>> &defaultValue,
-					   const boost::optional<int> &index) const {
-	XmlRpc::XmlRpcValue param = resolveName (name);
+					   const boost::optional<int> &index) const
+{
+	XmlRpc::XmlRpcValue param;
+
+	try {
+		param = resolveName (name);
+	} catch (const XmlRpc::XmlRpcException &e) {
+		if (defaultValue.has_value ())
+			return *defaultValue;
+		else
+			throw e;
+	}
 
 	if (param.getType () == XmlRpc::XmlRpcValue::TypeInvalid && defaultValue.has_value ())
 		return *defaultValue;

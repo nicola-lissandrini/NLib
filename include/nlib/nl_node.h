@@ -284,8 +284,8 @@ void NlNode<Derived>::init ()
 	try {
 		derived().initParams ();
 		derived().initROS ();
+		
 		_nlModFlow->init (_nlParams);
-
 	} catch (const XmlRpc::XmlRpcException &e) {
 		ROS_ERROR_STREAM(e.getMessage ());
 		std::abort ();
