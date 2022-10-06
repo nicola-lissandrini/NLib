@@ -588,8 +588,8 @@ inline NlSinks::Ptr NlModFlow::sinks () {
 
 template<class DerivedModule, typename ...Args>
 typename DerivedModule::Ptr NlModFlow::loadModule(Args &&...args) {
-	auto newModule = std::make_shared<DerivedModule> (this, args...);
-	_modules.push_back (newModule);
+    auto newModule = std::make_shared<DerivedModule> (this, args...);
+    _modules.push_back (std::dynamic_pointer_cast<NlModule> (newModule));
 	return newModule;
 }
 
