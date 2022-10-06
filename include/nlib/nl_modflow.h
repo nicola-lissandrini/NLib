@@ -184,12 +184,13 @@ protected:
 	    requestConnection (const std::string &channelName, void (M::*slot)(T...));
 
 	/**
-	 * @brief Request a void enabling channel to enable the module.
+     * @brief Request an enabling channel to enable the module.
 	 * Until all enabling channels have been triggered, events emitted on other channels
 	 * are discarded.
 	 * @param channelName Enabling channel name
 	 */
 	void requestEnablingChannel (const std::string &channelName);
+    void requestEnablingChannel (const Channel &channel);
 
 	/**
 	 * @brief Create standard channel of given type @p T and with name @p name, owned by this module
@@ -748,7 +749,7 @@ inline Channel NlModFlow::resolveChannel (const std::string &name) {
 }
 
 inline void NlModFlow::initDebugConfiguration () {
-	_debug.enabled = _nlParams.get<bool> ("mod_flow/debug/enable");
+    _debug.enabled = _nlParams.get<bool> ("mod_flow/debug/enable", false);
 
 	if (!_debug.enabled)
 		return;
@@ -967,16 +968,22 @@ std::enable_if_t<std::is_base_of<NlModule, M>::value>
 	_modFlow->createConnection (channel, boundSlot, getFcnName (slot));
 }
 
+inline void NlModule::requestEnablingChannel (const Channel &channelId)
+{
+    Slot<> boundEnableSlot = [this, channelId] (const Event::Ptr &event) {
+        this->_lastEvent = event;
+        this->setEnabled (channelId.id ());
+    };
+
+    _disablingChannels.insert (channelId.id ());
+    _modFlow->createConnection (channelId, boundEnableSlot, "<enabling " + channelId.name () + "> [" + name() + "]");
+
+}
+
 inline void NlModule::requestEnablingChannel (const std::string &channelName)
 {
-	Channel enablingChannel = _modFlow->resolveChannel (channelName);
-	Slot<> boundEnableSlot = [this, enablingChannel] (const Event::Ptr &event) {
-		this->_lastEvent = event;
-		this->setEnabled (enablingChannel.id ());
-	};
-
-	_disablingChannels.insert (enablingChannel.id ());
-	_modFlow->createConnection (enablingChannel, boundEnableSlot, "<enabling " + enablingChannel.name () + "> [" + name() + "]");
+    Channel channelId = _modFlow->resolveChannel (channelName);
+    requestEnablingChannel (channelId);
 }
 
 inline void NlModule::setEnabled (ChannelId enablingChannelId) {

@@ -153,13 +153,13 @@ using Base = nlib::NlNode<Derived>;\
     private: \
 
 
-		   template<class Derived>
-		   NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uint32_t options):
+template<class Derived>
+NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uint32_t options):
 	 _name(_name),
 	 _argc(_argc),
 	 _argv(_argv)
 {
-	ros::init (_argc, _argv, _name, options);
+    ros::init (_argc, _argv, _name, options);
 
 	_nh = std::make_shared<ros::NodeHandle> ();
 
@@ -238,7 +238,7 @@ std::string NlNode<Derived>::getStdTopic (const std::string &name, bool sub) {
 template<class Derived>
 void NlNode<Derived>::initParams ()
 {
-	if (_nh->hasParam (_name)) {
+    if (_nh->hasParam (_name)) {
 		XmlRpc::XmlRpcValue xmlParams;
 
 		_nh->getParam (_name, xmlParams);
