@@ -5,10 +5,10 @@ add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
 	roscpp)
+find_package (Boost REQUIRED)
 
 catkin_package(
 	CATKIN_DEPENDS roscpp nav_msgs
-	DEPENDS boost
 	INCLUDE_DIRS include
 	LIBRARIES nlib
 )
