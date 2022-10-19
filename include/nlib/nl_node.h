@@ -27,40 +27,40 @@ protected:
 
 	template<typename T>
 	void addSub (const std::string &name,
-			   const std::string &topic,
-			   uint32_t queueSize,
-			   void (Derived::*fp)(T),
-			   const ros::TransportHints &transportHints = ros::TransportHints ());
+				const std::string &topic,
+				uint32_t queueSize,
+				void (Derived::*fp)(T),
+				const ros::TransportHints &transportHints = ros::TransportHints ());
 
-	  // Add subscriber with topic names from standard params
+	// Add subscriber with topic names from standard params
 	template<typename T>
 	void addSub (const std::string &name,
-			   uint32_t queueSize,
-			   void (Derived::*fp)(T),
-			   const ros::TransportHints &transportHints = ros::TransportHints ());
+				uint32_t queueSize,
+				void (Derived::*fp)(T),
+				const ros::TransportHints &transportHints = ros::TransportHints ());
 
 	template<typename T>
 	void addPub (const std::string &name,
-			   const std::string &topic,
-			   uint32_t queueSize,
-			   bool latch = false);
+				const std::string &topic,
+				uint32_t queueSize,
+				bool latch = false);
 
-	  // Add publisher with topic names from standard params
+	// Add publisher with topic names from standard params
 	template<typename T>
 	void addPub (const std::string &name,
-			   uint32_t queueSize,
-			   bool latch = false);
+				uint32_t queueSize,
+				bool latch = false);
 
-	  // Create publisher for output manager
+	// Create publisher for output manager
 	template<typename T>
 	std::shared_ptr<ros::Publisher> createOutput (const std::string &topicPrefix,
-										 const std::string &name,
-										 uint32_t queueSize,
-										 bool latch = false);
+												 const std::string &name,
+												 uint32_t queueSize,
+												 bool latch = false);
 
 	template<typename T>
 	void publish (const std::string &name,
-			    const T &msg) const;
+				 const T &msg) const;
 
 	void initParams ();
 	void initROS ();
@@ -131,35 +131,35 @@ void OutputManager<OutputType>::addOutput (const OutputType &id, const std::shar
 
 template<typename OutputType>
 typename OutputManager<OutputType>::PubsMap::iterator
-    OutputManager<OutputType>::begin () {
+OutputManager<OutputType>::begin () {
 	return outputPubs.begin ();
 }
 
 template<typename OutputType>
 typename OutputManager<OutputType>::PubsMap::iterator
-    OutputManager<OutputType>::end () {
+OutputManager<OutputType>::end () {
 	return outputPubs.end ();
 }
 
 #define NL_NODE(Derived) \
 using Base = nlib::NlNode<Derived>;\
-    friend Base; \
-    using Base::init; \
-    using Base::finalizeModFlow; \
-    using Base::sinks; \
-    using Base::sources; \
-    public:\
-    using Base::spin; \
-    private: \
+	friend Base; \
+	using Base::init; \
+	using Base::finalizeModFlow; \
+	using Base::sinks; \
+	using Base::sources; \
+	public:\
+	using Base::spin; \
+	private: \
 
 
-template<class Derived>
-NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uint32_t options):
-	 _name(_name),
-	 _argc(_argc),
-	 _argv(_argv)
+			  template<class Derived>
+			  NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uint32_t options):
+	  _name(_name),
+	  _argc(_argc),
+	  _argv(_argv)
 {
-    ros::init (_argc, _argv, _name, options);
+	ros::init (_argc, _argv, _name, options);
 
 	_nh = std::make_shared<ros::NodeHandle> ();
 
@@ -170,7 +170,7 @@ NlNode<Derived>::NlNode (int &_argc, char **_argv, const std::string &_name, uin
 template<class Derived>
 template<typename T>
 void NlNode<Derived>::publish (const std::string &name,
-						 const T &msg) const {
+							  const T &msg) const {
 	return _publishers.at (name).publish (msg);
 }
 
@@ -178,48 +178,48 @@ void NlNode<Derived>::publish (const std::string &name,
 template<class Derived>
 template<typename T>
 void NlNode<Derived>::addSub (const std::string &name,
-						const std::string &topic,
-						uint32_t queueSize,
-						void (Derived::*fp)(T),
-						const ros::TransportHints &transportHints) {
+							 const std::string &topic,
+							 uint32_t queueSize,
+							 void (Derived::*fp)(T),
+							 const ros::TransportHints &transportHints) {
 	_subscribers.insert ({name, _nh->subscribe (topic, queueSize, fp, &derived(), transportHints )});
 }
 
 template<class Derived>
 template<typename T>
 void NlNode<Derived>::addSub (const std::string &name,
-						uint32_t queueSize,
-						void (Derived::*fp)(T),
-						const ros::TransportHints &transportHints) {
+							 uint32_t queueSize,
+							 void (Derived::*fp)(T),
+							 const ros::TransportHints &transportHints) {
 	addSub (name, getStdTopic (name, true), queueSize, fp, transportHints);
 }
 
 template<class Derived>
 template<typename T>
 void NlNode<Derived>::addPub (const std::string &name,
-						const std::string &topic,
-						uint32_t queueSize,
-						bool latch) {
+							 const std::string &topic,
+							 uint32_t queueSize,
+							 bool latch) {
 	_publishers.insert ({name, _nh->advertise<T> (topic, queueSize, latch)});
 }
 
 template<class Derived>
 template<typename T>
 void NlNode<Derived>::addPub (const std::string &name,
-						uint32_t queueSize,
-						bool latch) {
+							 uint32_t queueSize,
+							 bool latch) {
 	addPub<T> (name, getStdTopic (name, false), queueSize, latch);
 }
 
 template<class Derived>
 template<typename T>
 std::shared_ptr<ros::Publisher> NlNode<Derived>::createOutput (const std::string &topicPrefix,
-												   const std::string &name,
-												   uint32_t queueSize,
-												   bool latch)
+															  const std::string &name,
+															  uint32_t queueSize,
+															  bool latch)
 {
 	return std::make_shared<ros::Publisher> (
-	    _nh->advertise<T> (topicPrefix + "/" + name, queueSize, latch));
+		_nh->advertise<T> (topicPrefix + "/" + name, queueSize, latch));
 }
 
 template<class Derived>
@@ -238,7 +238,7 @@ std::string NlNode<Derived>::getStdTopic (const std::string &name, bool sub) {
 template<class Derived>
 void NlNode<Derived>::initParams ()
 {
-    if (_nh->hasParam (_name)) {
+	if (_nh->hasParam (_name)) {
 		XmlRpc::XmlRpcValue xmlParams;
 
 		_nh->getParam (_name, xmlParams);
@@ -247,8 +247,8 @@ void NlNode<Derived>::initParams ()
 			_nlParams = {xmlParams, _name};
 
 	}
-	 // If no params are loaded, nlParams is empty
-	 // Every trial of getting a param from nlParams will result in an exception
+	// If no params are loaded, nlParams is empty
+	// Every trial of getting a param from nlParams will result in an exception
 }
 
 template<class Derived>
@@ -304,14 +304,22 @@ void NlNode<Derived>::finalizeModFlow () {
 template<class Derived>
 int NlNode<Derived>::spin ()
 {
-	ros::AsyncSpinner spinner(2);
+	int threads = _nlParams.get<int> ("threads", 0);
+	std::unique_ptr<ros::AsyncSpinner> spinner;
 
-	spinner.start ();
+	if (threads > 0) {
+		spinner = std::make_unique<ros::AsyncSpinner> (threads);
+
+		spinner->start ();
+	}
 
 	if (_synchronous)
 		_clock.start ();
 
-	ros::waitForShutdown ();
+	if (threads > 0)
+		ros::waitForShutdown ();
+	else
+		ros::spin ();
 
 	return 0;
 }
