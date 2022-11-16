@@ -65,7 +65,24 @@ std::string getFcnName (T functionAddress) {
 /// @brief define concat ClassnamePtr symbol for shared_ptr of the class
 /// To be used outside class definition
 #define DEF_SHARED_CAT(classname) using classname##Ptr = std::shared_ptr<classname>;
+/// @brief Define base handle for inherited params. To be protected
+#define NLIB_PARAMS_BASE  \
+template<class _DerivedParams>\
+const _DerivedParams &paramsDerived () const {\
+	return *std::dynamic_pointer_cast<_DerivedParams> (_params);\
+}
+/// @brief Automatic set params. To be public
+#define NLIB_PARAMS_SET \
+template<class _DerivedParams> \
+void setParams (const _DerivedParams &params) {\
+	_params = std::make_shared<_DerivedParams> (params);\
+}
 
+/// @brief Define specific handle for inherited params, shorthand for Base::params<Derived::Params>
+#define NLIB_PARAMS_INHERIT(Base) \
+const Params &params () const { \
+	return Base::paramsDerived<Params> (); \
+}
 
 /**
  * @defgroup gpt General purpose tools

@@ -1,7 +1,9 @@
 #ifndef NL_MODFLOW_H
 #define NL_MODFLOW_H
 
+#include <functional>
 #include <ros/ros.h>
+#include <type_traits>
 #include <typeindex>
 #include <set>
 #include "nl_params.h"
@@ -65,8 +67,8 @@ private:
 	const int _depth;
 };
 
-template<typename ...T>
-using Slot = std::function<void(const Event::Ptr &, const T &...)>;
+template<typename R, typename ...T>
+using Slot = std::function<R(const Event::Ptr &, const T &...)>;
 
 /**
  * @defgroup modflow NlModFlow: a graph based modular interface
@@ -75,7 +77,7 @@ using Slot = std::function<void(const Event::Ptr &, const T &...)>;
 
 
 /**
- * @brief Defines a channel that each module can define and to which other modules can connect
+ * @brief Defines a channel that each module can create and to which other modules can connect
  * @ingroup modflow
  */
 class Channel
@@ -179,9 +181,9 @@ protected:
 	 * @param channelName Channel name to be resolved
 	 * @param slot Member function of signature void M::(T)
 	 */
-	template<typename ...T, typename M>
+	template<typename ...T, typename M, typename R>
 	std::enable_if_t<std::is_base_of<NlModule, M>::value>
-	    requestConnection (const std::string &channelName, void (M::*slot)(T...));
+		requestConnection (const std::string &channelName, R (M::*slot)(T...));
 
 	/**
      * @brief Request an enabling channel to enable the module.
@@ -221,6 +223,9 @@ protected:
 	template<typename ...T>
 	void emit (const Channel &channel, const T &...value);
 
+	template<typename R, typename ...T>
+	R callService (const Channel &channel, const T &...value);
+
 	/**
 	 *  @brief Emit data on named channel. All slots connected to the supplied channel will be called in order. @par Complexity
 	 *  Logarithmic in the number of channels.
@@ -229,6 +234,9 @@ protected:
 	 */
 	template<typename ...T>
 	void emit (const std::string &channelName, const T &...value);
+
+	template<typename R, typename ...T>
+	R callService (const std::string &channel, const T &...value);
 
 
 private:
@@ -356,15 +364,26 @@ private:
  */
 class SerializedSlot
 {
-	using SerializedFcn = std::function<void(const Event::Ptr &, const void *)>;
+	using SerializedFcn = std::function<void *(const Event::Ptr &, const void *)>;
+
+	template<typename R, typename ...T>
+	std::enable_if_t<(sizeof... (T) <= 1) &&
+					 !std::is_same<R, void>::value>
+		serialize (const Slot<R, T...> &slot);
+
+	template<typename R, typename ...T,  std::size_t ...is>
+	std::enable_if_t<(sizeof... (T) > 1) &&
+					 !std::is_same<R, void>::value>
+		serialize (const Slot<R, T...> &slot,
+				std::index_sequence<is...>);
 
 	template<typename ...T>
 	std::enable_if_t<(sizeof... (T) <= 1)>
-	    serialize (const Slot<T...> &slot);
+		serialize (const Slot<void, T...> &slot);
 
-	template<typename ...T, std::size_t ...is>
+	template<typename ...T,  std::size_t ...is>
 	std::enable_if_t<(sizeof... (T) > 1)>
-	    serialize (const Slot<T...> &slot,
+		serialize (const Slot<void, T...> &slot,
 				std::index_sequence<is...>);
 public:
 	/**
@@ -374,14 +393,14 @@ public:
 	 * @tparam T Function object argument type(s)
 	 * @param slot Generic function object of type void(T)
 	 */
-	template<typename ...T>
-	SerializedSlot (const Slot<T...> &slt,
+	template<typename R, typename ...T>
+	SerializedSlot (const Slot<R, T...> &slt,
 				 const Channel &channel,
 				 const std::string &slotName,
 				 std::enable_if_t<(sizeof...(T) <= 1)> * = 0);
 
-	template<typename ...T>
-	SerializedSlot (const Slot<T...> &slt,
+	template<typename R, typename ...T>
+	SerializedSlot (const Slot<R, T...> &slt,
 				 const Channel &channel,
 				 const std::string &slotName,
 				 std::enable_if_t<(sizeof...(T) > 1)> * = 0);
@@ -392,13 +411,33 @@ public:
 	 * @tparam T Function object argument type
 	 * @param arg Argument to be supplied to the slot
 	 */
-	template<typename ...T>
-	std::enable_if_t<(sizeof... (T) <= 1)>
+	template<typename R, typename ...T>
+	std::enable_if_t<(sizeof... (T) <= 1) &&
+					 std::is_same<R, void>::value, R>
 	    invoke (const Event::Ptr &event, const T &...arg) const;
 
-	template<typename ...T>
-	std::enable_if_t<(sizeof... (T) > 1)>
+	template<typename R, typename ...T>
+	std::enable_if_t<(sizeof... (T) > 1) &&
+					 std::is_same<R, void>::value, R>
 	    invoke (const Event::Ptr &event, const T &...arg) const;
+
+	template<typename R>
+	std::enable_if_t<std::is_same<R, void>::value, R>
+		invoke (const Event::Ptr &event) const;
+
+	template<typename R, typename ...T>
+	std::enable_if_t<(sizeof... (T) <= 1) &&
+					 !std::is_same<R, void>::value, R>
+		invoke (const Event::Ptr &event, const T &...arg) const;
+
+	template<typename R, typename ...T>
+	std::enable_if_t<(sizeof... (T) > 1) &&
+					 !std::is_same<R, void>::value, R>
+		invoke (const Event::Ptr &event, const T &...arg) const;
+
+	template<typename R>
+	std::enable_if_t<!std::is_same<R, void>::value, R>
+		invoke (const Event::Ptr &event) const;
 
 	std::string name () const {
 		return _name;
@@ -518,8 +557,8 @@ protected:
 	 * @param name Connection name
 	 * @param slot Function object of type void(T)
 	 */
-	template<typename ...T>
-	void createConnection (const Channel &channel, const Slot<T...> &slot, const std::string &name);
+	template<typename ...T, typename R>
+	void createConnection (const Channel &channel, const Slot<R, T...> &slot, const std::string &name);
 
 	/**
 	 * @brief Emit an event on @p channel. This will call the corresponding
@@ -532,17 +571,24 @@ protected:
 	 * @param value Value to be transmitted
 	 * @param caller NlModule that is emitting event
 	 */
-	template<typename ...T>
-	void emit (const Channel &channel, const NlModule *caller, const T &...value);
+	template<typename R, typename ...T>
+	std::enable_if_t<std::is_same<R, void>::value, R>
+		emit (const Channel &channel, const NlModule *caller, const T &...value);
+
+	template<typename R, typename ...T>
+	std::enable_if_t<!std::is_same<R, void>::value, R>
+		emit (const Channel &channel, const NlModule *caller, const T &...value);
 
 	/**
 	 * @brief Emit an event on a channel itentified by its name via @ref resolveChannel
 	 * @see emit
 	 */
-	template<typename ...T>
-	void emit (const std::string &channelName, const NlModule *caller, const T &...value);
+	template<typename R, typename ...T>
+	R emit (const std::string &channelName, const NlModule *caller, const T &...value);
 
 private:
+	template<typename R, typename ...T>
+	Event::Ptr prepareEmit (const Channel &channel, const NlModule *caller);
 	void initDebugConfiguration ();
 	bool debugFilters (const Event::Ptr &event);
 
@@ -562,6 +608,8 @@ private:
 	std::vector<NlModule::Ptr> _modules;
 	std::map<std::string, Channel> _channelNames;
 	std::vector<Connection> _connections;
+
+protected:
 	NlParams _nlParams;
 };
 
@@ -639,8 +687,8 @@ bool Channel::checkType () const {
 	return stackTypes(&typeid(T)...) == _types;
 }
 
-template<typename ...T>
-SerializedSlot::SerializedSlot (const Slot<T...> &slt,
+template<typename R, typename ...T>
+SerializedSlot::SerializedSlot (const Slot<R, T...> &slt,
 						  const Channel &channel,
 						  const std::string &slotName,
 						  std::enable_if_t<(sizeof...(T) <= 1)> *):
@@ -650,8 +698,8 @@ SerializedSlot::SerializedSlot (const Slot<T...> &slt,
 	serialize (slt);
 }
 
-template<typename ...T>
-SerializedSlot::SerializedSlot (const Slot<T...> &slt,
+template<typename R, typename ...T>
+SerializedSlot::SerializedSlot (const Slot<R, T...> &slt,
 						  const Channel &channel,
 						  const std::string &slotName,
 						  std::enable_if_t<(sizeof...(T) > 1)> *):
@@ -663,40 +711,117 @@ SerializedSlot::SerializedSlot (const Slot<T...> &slt,
 
 template<typename ...T>
 std::enable_if_t<(sizeof...(T) <= 1)>
-    SerializedSlot::serialize (const Slot<T...> &slt) {
-	serialized = [slt] (const Event::Ptr &event, const void *arg) {
+	SerializedSlot::serialize (const Slot<void, T...> &slt)
+{
+	serialized = [slt] (const Event::Ptr &event, const void *arg) -> void * {
 		slt(event, *reinterpret_cast<const T *> (arg) ...);
+
+		return nullptr;
 	};
 }
 
 template<typename ...T, size_t ...is>
 std::enable_if_t<(sizeof...(T) > 1)>
-    SerializedSlot::serialize (const Slot<T...> &slt, std::index_sequence<is...>) {
-	serialized = [slt] (const Event::Ptr &event, const void *arg) {
+	SerializedSlot::serialize (const Slot<void, T...> &slt, std::index_sequence<is...>)
+{
+	serialized = [slt] (const Event::Ptr &event, const void *arg) -> void * {
 		auto argTuple = *reinterpret_cast<const std::tuple<T...> *> (arg);
 		slt(event, std::get<is> (argTuple) ...);
+
+		return nullptr;
 	};
 }
 
-template<typename ...T>
-std::enable_if_t<(sizeof...(T) > 1)>
-    SerializedSlot::invoke (const Event::Ptr &event, const T &...arg) const {
+template<typename R, typename ...T>
+std::enable_if_t<(sizeof... (T) <= 1) &&
+				 !std::is_same<R, void>::value>
+	SerializedSlot::serialize (const Slot<R, T...> &slt)
+{
+	serialized = [slt] (const Event::Ptr &event, const void *arg) -> void * {
+		R *objData = new R; // will be deleted in invoke ()
+		*objData = slt(event, *reinterpret_cast<const T *> (arg) ...);
+		return reinterpret_cast<void *> (objData);
+	};
+}
+
+template<typename R, typename ...T, size_t ...is>
+std::enable_if_t<(sizeof... (T) > 1) &&
+				 !std::is_same<R, void>::value>
+	SerializedSlot::serialize (const Slot<R, T...> &slt, std::index_sequence<is...>)
+{
+	serialized = [slt] (const Event::Ptr &event, const void *arg) -> R {
+		R *objData = new R; // will be deleted in invoke ()
+		auto argTuple = *reinterpret_cast<const std::tuple<T...> *> (arg);
+		*objData = slt(event, std::get<is> (argTuple) ...);
+
+		return reinterpret_cast<void *> (objData);
+	};
+}
+
+template<typename R, typename ...T>
+std::enable_if_t<(sizeof... (T) <= 1) &&
+				 std::is_same<R, void>::value, R>
+	SerializedSlot::invoke (const Event::Ptr &event, const T &...arg) const
+{
+	serialized (event, reinterpret_cast<const void *> (&arg) ...);
+}
+
+template<typename R, typename ...T>
+std::enable_if_t<(sizeof... (T) > 1) &&
+				 std::is_same<R, void>::value, R>
+	SerializedSlot::invoke (const Event::Ptr &event, const T &...arg) const
+{
 	auto data = std::tuple<T...> (arg...);
 	serialized (event, reinterpret_cast<const void *> (&data));
 }
 
-
-template<typename ...T>
-std::enable_if_t<(sizeof...(T) <= 1)>
-    SerializedSlot::invoke (const Event::Ptr &event, const T &...arg) const {
-	serialized (event, reinterpret_cast<const void *> (&arg) ...);
+template<typename R>
+std::enable_if_t<std::is_same<R, void>::value, R>
+	SerializedSlot::invoke (const Event::Ptr &event) const
+{
+	serialized (event, nullptr);
 }
 
+template<typename R, typename ...T>
+std::enable_if_t<(sizeof... (T) <= 1) &&
+				 !std::is_same<R, void>::value, R>
+	SerializedSlot::invoke (const Event::Ptr &event, const T &...arg) const
+{
+	void *objDataVoid = serialized (event, reinterpret_cast<const void *> (&arg) ...);
+	R *objDataR = reinterpret_cast<R *> (objDataVoid);
+	R objDataCopy = *objDataR; // allow deletion of temporary allocation
 
-template<>
-inline std::enable_if_t<true>
-    SerializedSlot::invoke (const Event::Ptr &event) const {
-	serialized (event, nullptr);
+	delete objDataR;
+
+	return objDataCopy;
+}
+
+template<typename R, typename ...T>
+std::enable_if_t<(sizeof... (T) > 1) &&
+				 !std::is_same<R, void>::value, R>
+	SerializedSlot::invoke (const Event::Ptr &event, const T &...arg) const
+{
+	auto data = std::tuple<T...> (arg...);
+	void *objDataVoid = serialized (event, reinterpret_cast<const void *> (&data));
+	R *objDataR = reinterpret_cast<R *> (objDataVoid);
+	R objDataCopy = *objDataR; // allow deletion of temporary allocation
+
+	delete objDataR;
+
+	return objDataCopy;
+}
+
+template<typename R>
+std::enable_if_t<!std::is_same<R, void>::value, R>
+	SerializedSlot::invoke (const Event::Ptr &event) const
+{
+	void *objDataVoid = serialized (event, nullptr);
+	R *objDataR = reinterpret_cast<R *> (objDataVoid);
+	R objDataCopy = *objDataR; // allow deletion of temporary allocation
+
+	delete objDataR;
+
+	return objDataCopy;
 }
 
 inline NlModFlow::NlModFlow ():
@@ -773,8 +898,8 @@ Channel NlModule::requireSink (const std::string &sinkName)
 }
 
 
-template<typename ...T>
-void NlModFlow::createConnection (const Channel &channel, const Slot<T...> &slot, const std::string &name)
+template<typename ...T, typename R>
+void NlModFlow::createConnection (const Channel &channel, const Slot<R, T...> &slot, const std::string &name)
 {
 	SerializedSlot serializedSlot(slot, channel, name);
 
@@ -826,11 +951,6 @@ inline bool NlModFlow::debugFilters (const Event::Ptr &event) {
 			return false;
 	}
 
-	/*
-	if (!contains (_debug.filterOnlyModules, moduleName) ||
-	    !contains (_debug.filterOnlyChannels, channelName))
-		return false;*/
-
 	for (const std::string &curr : _debug.filterExcludeChannels) {
 		if (event->channelInAncestors (curr))
 			return false;
@@ -865,10 +985,10 @@ inline void errorOwnership (const Channel &channel, const NlModule *caller) {
 			<< channel.name () << ", owned by " << channel.ownerName () << std::endl;
 }
 
-template<typename ...T>
-void NlModFlow::emit (const Channel &channel,
-				  const NlModule *caller,
-				  const T &...value)
+
+template<typename R, typename ...T>
+Event::Ptr NlModFlow::prepareEmit(const Channel &channel,
+				  const NlModule *caller)
 {
 	if (!channel.checkType<T...> ()) {
 		errorChannelTypeMismatch<T...> (channel, caller, true);
@@ -883,7 +1003,7 @@ void NlModFlow::emit (const Channel &channel,
 	Event::Ptr lastEvent = caller->lastEvent ();
 	Event::Ptr event;
 
-	    // This is the case for a source call
+		// This is the case for a source call
 	if (dynamic_cast<const NlSources *> (caller) != nullptr)
 		event = std::make_shared<Event> (caller, &channel);
 	else
@@ -892,20 +1012,49 @@ void NlModFlow::emit (const Channel &channel,
 	if (debugFilters (event))
 		debugTrackEmit (event->depth (), channel, caller, _connections[channel.id ()].size ());
 
+	return event;
+}
+
+template<typename R, typename ...T>
+std::enable_if_t<!std::is_same<R, void>::value, R>
+ NlModFlow::emit (const Channel &channel,
+				  const NlModule *caller,
+				  const T &...value)
+{
+	Event::Ptr event = prepareEmit<R, T...> (channel, caller);
+
+	assert ((_connections[channel.id ()].size () == 1) && "Non-void return type only allowed to channels with single connections");
+
+	const SerializedSlot &currentSlot = _connections[channel.id ()].front ();
+
+	if (debugFilters (event))
+		debugConnection (event->depth (), caller, currentSlot);
+
+	return currentSlot.invoke<R, T...> (event, value...);
+}
+
+template<typename R, typename ...T>
+std::enable_if_t<std::is_same<R, void>::value, R>
+ NlModFlow::emit (const Channel &channel,
+				  const NlModule *caller,
+				  const T &...value)
+{
+	Event::Ptr event = prepareEmit<R, T...> (channel, caller);
+
 	for (const SerializedSlot &currentSlot : _connections[channel.id ()]) {
 		if (debugFilters (event))
 			debugConnection (event->depth (), caller, currentSlot);
 
-		currentSlot.invoke<T...> (event, value...);
+		currentSlot.invoke<R, T...> (event, value...);
 	}
 }
 
 
-template<typename ...T>
-void NlModFlow::emit (const std::string &channelName,
+template<typename R, typename ...T>
+R NlModFlow::emit (const std::string &channelName,
 				  const NlModule *caller,
 				  const T &...value) {
-	emit (resolveChannel (channelName), caller, value...);
+	return emit<R, T...> (resolveChannel (channelName), caller, value...);
 }
 
 template<typename ...T>
@@ -915,12 +1064,12 @@ Channel NlSources::declareSource (const std::string &name) {
 
 template<typename ...T>
 void NlSources::callSource (const std::string &channelName, const T &...value) {
-	emit (channelName, value...);
+	emit<T...> (channelName, value...);
 }
 
 template<typename ...T>
 void NlSources::callSource (const Channel &channel, const T &...value) {
-	emit (channel, value...);
+	emit<T...> (channel, value...);
 }
 
 
@@ -928,7 +1077,7 @@ template<typename ...T, class ParentClass>
 void NlSinks::declareSink (const std::string &name, void (ParentClass::*parentSlot)(T...), ParentClass *parent)
 {
 	Channel channel = _modFlow->createChannel<T...> (name, this, true);
-	Slot<T...> boundSlot = [parent, parentSlot] (const Event::Ptr &, T... value) {
+	Slot<void, T...> boundSlot = [parent, parentSlot] (const Event::Ptr &, const T &... value) {
 		(parent->*parentSlot)(value...);
 	};
 
@@ -947,9 +1096,9 @@ inline Event::Ptr NlModule::lastEvent() const {
 	return _lastEvent;
 }
 
-template<typename ...T, typename M>
+template<typename ...T, typename M, typename R>
 std::enable_if_t<std::is_base_of<NlModule, M>::value>
-    NlModule::requestConnection (const std::string &channelName, void (M::*slot)(T...))
+	NlModule::requestConnection (const std::string &channelName, R (M::*slot)(T...))
 {
 	Channel channel = _modFlow->resolveChannel (channelName);
 
@@ -958,11 +1107,11 @@ std::enable_if_t<std::is_base_of<NlModule, M>::value>
 		assert (false && "Channel type mismatch");
 	}
 
-	Slot<T...> boundSlot = [this, slot] (const Event::Ptr &event, T ...arg) {
+	Slot<R, T...> boundSlot = [this, slot] (const Event::Ptr &event, T ...arg) -> R {
 		M *child = dynamic_cast<M*> (this);
 		this->_lastEvent = event;
 		if (this->isEnabled ())
-			(child->*slot) (arg...);
+			return (child->*slot) (arg...);
 	};
 
 	_modFlow->createConnection (channel, boundSlot, getFcnName (slot));
@@ -970,7 +1119,7 @@ std::enable_if_t<std::is_base_of<NlModule, M>::value>
 
 inline void NlModule::requestEnablingChannel (const Channel &channelId)
 {
-    Slot<> boundEnableSlot = [this, channelId] (const Event::Ptr &event) {
+	Slot<void> boundEnableSlot = [this, channelId] (const Event::Ptr &event) {
         this->_lastEvent = event;
         this->setEnabled (channelId.id ());
     };
@@ -1014,13 +1163,25 @@ inline const std::string &NlModule::name () const {
 
 template<typename ...T>
 void NlModule::emit (const Channel &channel, const T &...value) {
-	_modFlow->emit (channel, this, value...);
+	_modFlow->emit<void, T...> (channel, this, value...);
 }
 
 template<typename ...T>
 void NlModule::emit (const std::string &channelName, const T &...value) {
-	_modFlow->emit (channelName, this, value...);
+	_modFlow->emit<void, T...> (channelName, this, value...);
 }
+
+
+template<typename R, typename ...T>
+R NlModule::callService (const Channel &channel, const T &...value) {
+	return _modFlow->emit<R, T...> (channel, this, value...);
+}
+
+template<typename R, typename ...T>
+R NlModule::callService (const std::string &channelName, const T &...value) {
+	return _modFlow->emit<R, T...> (channelName, this, value...);
+}
+
 
 
 }
