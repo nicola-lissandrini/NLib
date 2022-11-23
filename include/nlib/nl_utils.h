@@ -6,7 +6,7 @@
 #include <chrono>
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
-#include <boost/optional.hpp>
+#include <optional>
 #include <map>
 #include <sstream>
 #include <dlfcn.h>
@@ -94,7 +94,7 @@ const Params &params () const { \
 template<typename T>
 struct RangeBase {
 	T min, max;
-	boost::optional<T> step;
+	std::optional<T> step;
 
 	int count () const;
 	T width () const;
