@@ -61,6 +61,7 @@ public:
 	}
 
 private:
+	std::map<std::string, void * const> _resources;
 	const Event::Ptr _parent;
 	const NlModule *_module;
 	const Channel *_channel;
@@ -586,6 +587,7 @@ protected:
 	template<typename R, typename ...T>
 	R emit (const std::string &channelName, const NlModule *caller, const T &...value);
 
+
 private:
 	template<typename R, typename ...T>
 	Event::Ptr prepareEmit (const Channel &channel, const NlModule *caller);
@@ -611,6 +613,7 @@ private:
 
 protected:
 	NlParams _nlParams;
+	ResourceManager _resources;
 };
 
 inline bool Event::moduleInAncestors  (const std::string &name) const {

@@ -206,6 +206,41 @@ public:
 
 using ReadyFlagsStr = ReadyFlags<std::string>;
 
+#if __cplusplus >= 201703L
+
+class ResourceManager
+{
+public:
+	template<typename T, typename ...Args>
+	void create (const std::string &name, Args &&...args);
+
+	template<typename T>
+	std::shared_ptr<T> get (const std::string &name);
+
+private:
+	std::map<std::string, std::any> _resources;
+};
+
+template<typename T, typename ...Args>
+void ResourceManager::create (const std::string &name, Args &&...args)
+{
+	_resources[name] = std::make_shared<T> (args...);
+}
+
+template<typename T>
+std::shared_ptr<T> ResourceManager::get (const std::string &name) {
+	auto resource = _resources[name];
+
+	if (resource.type () != typeid(std::shared_ptr<T>)) {
+		std::cout << "Error: Resource " << name << " has type " << resource.type ().name () << ". Got " << typeid(std::shared_ptr<T>).name () << "\nAborting" << endl;
+		std::abort ();
+	}
+
+	return std::any_cast<std::shared_ptr<T>> (_resources[name]);
+}
+#endif //  __cplusplus >= 201703L
+
+
 template<class T, class clock, class duration>
 class TimedObject
 {
