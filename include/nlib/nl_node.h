@@ -248,7 +248,7 @@ void NlNode<Derived>::initParams ()
 
 	}
 	// If no params are loaded, nlParams is empty
-	// Every trial of getting a param from nlParams will result in an exception
+	// Every attempt of getting a param from nlParams will result in an exception
 }
 
 template<class Derived>

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.0.2)
 project(nlib)
 
 add_compile_options(-std=c++17)
+add_compile_options(-O3)
+
 
 find_package(catkin REQUIRED COMPONENTS
 	roscpp)

@@ -500,6 +500,8 @@ inline empty_container<double> Type<double>::convert (XmlRpc::XmlRpcValue &param
 	case XmlRpc::XmlRpcValue::TypeDouble:
 		return static_cast<double> (param);
 	}
+
+	__builtin_unreachable ();
 }
 
 template<>

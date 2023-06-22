@@ -10,6 +10,7 @@
 #include <map>
 #include <sstream>
 #include <dlfcn.h>
+#include <iomanip>
 
 /** @file nlutils.h
  *  @author Nicola Lissandrini
@@ -295,6 +296,24 @@ std::ostream &operator << (std::ostream &os, const TimedObject<T, clock, duratio
 
 /// @defgroup pt Profiling tools
 
+const std::string secStrings[] = {
+	"s", "ms", "us", "ns"
+};
+
+inline std::string secView (double x) {
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(2);
+	for (int i = 0; i < 4; i++) {
+		double xp = x * pow(10, i*3);
+		if (xp >= 1) {
+			ss << std::setw(6) << xp << secStrings[i];
+			return ss.str();
+		}
+	}
+	ss << x << secStrings[0];
+	return ss.str();
+}
+
 /// @brief Compute execution time of @p lambda
 /// @param taken: floating point varible to store total time
 /// @param lambda: lambda function of type [&](){ ... generic code ...}
@@ -307,10 +326,10 @@ std::stringstream ID;\
     auto _start = std::chrono::steady_clock::now ();\
     lambda();\
     auto _end = std::chrono::steady_clock::now ();\
-    taken = double(std::chrono::duration_cast<std::chrono::microseconds> (_end - _start).count ())/1e3;\
+	taken = double(std::chrono::duration_cast<std::chrono::microseconds> (_end - _start).count ())/1e6;\
     if (enable) {\
-	    if (ndiv == 1) std::cout << ID.str() << ": taken: " << taken << "ms" << std::endl;\
-	    else std::cout << ID.str() << ": total: " << taken << "ms each: " << taken/double(ndiv) << "ms over " << ndiv << " trials" << std::endl; }}
+		if (ndiv == 1) std::cout << ID.str() << ": taken: " << secView(taken) << std::endl;\
+		else std::cout << ID.str() << ": total: " << secView(taken) << " each: " << secView(taken/double(ndiv)) << " over " << ndiv << " trials" << std::endl; }}
 
 #ifdef DISABLE_PROFILE_OUTPUT
 #define PROFILE_N(taken,lambda,ndiv) PROFILE_N_EN(taken,lambda,ndiv,false)
