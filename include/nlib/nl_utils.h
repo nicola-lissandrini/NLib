@@ -11,6 +11,8 @@
 #include <sstream>
 #include <dlfcn.h>
 #include <iomanip>
+#include <any>
+#include <variant>
 
 /** @file nlutils.h
  *  @author Nicola Lissandrini
@@ -232,12 +234,35 @@ std::shared_ptr<T> ResourceManager::get (const std::string &name) {
 	auto resource = _resources[name];
 
 	if (resource.type () != typeid(std::shared_ptr<T>)) {
-		std::cout << "Error: Resource " << name << " has type " << resource.type ().name () << ". Got " << typeid(std::shared_ptr<T>).name () << "\nAborting" << endl;
+		std::cout << "Error: Resource " << name << " has type " << resource.type ().name () << ". Got " << typeid(std::shared_ptr<T>).name () << "\nAborting" << std::endl;
 		std::abort ();
 	}
 
 	return std::any_cast<std::shared_ptr<T>> (_resources[name]);
 }
+
+template<typename T, typename Error>
+class AlgorithmResult
+{
+public:
+	AlgorithmResult (const T &value): _result(T{value}) {}
+	AlgorithmResult (const Error &error): _result(error) {}
+
+	bool success () const {
+		return std::holds_alternative<T> (_result);
+	}
+
+	T value () const {
+		return std::get<T> (_result);
+	}
+
+	Error error () const {
+		return std::get<Error> (_result);
+	}
+
+private:
+	std::variant<T, Error> _result;
+};
 #endif //  __cplusplus >= 201703L
 
 
