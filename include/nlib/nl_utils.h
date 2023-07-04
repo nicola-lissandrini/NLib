@@ -11,6 +11,8 @@
 #include <sstream>
 #include <dlfcn.h>
 #include <iomanip>
+#include <any>
+#include <variant>
 
 /** @file nlutils.h
  *  @author Nicola Lissandrini
@@ -205,6 +207,64 @@ public:
 };
 
 using ReadyFlagsStr = ReadyFlags<std::string>;
+
+#if __cplusplus >= 201703L
+
+class ResourceManager
+{
+public:
+	template<typename T, typename ...Args>
+	void create (const std::string &name, Args &&...args);
+
+	template<typename T>
+	std::shared_ptr<T> get (const std::string &name);
+
+private:
+	std::map<std::string, std::any> _resources;
+};
+
+template<typename T, typename ...Args>
+void ResourceManager::create (const std::string &name, Args &&...args)
+{
+	_resources[name] = std::make_shared<T> (args...);
+}
+
+template<typename T>
+std::shared_ptr<T> ResourceManager::get (const std::string &name) {
+	auto resource = _resources[name];
+
+	if (resource.type () != typeid(std::shared_ptr<T>)) {
+		std::cout << "Error: Resource " << name << " has type " << resource.type ().name () << ". Got " << typeid(std::shared_ptr<T>).name () << "\nAborting" << std::endl;
+		std::abort ();
+	}
+
+	return std::any_cast<std::shared_ptr<T>> (_resources[name]);
+}
+
+template<typename T, typename Error>
+class AlgorithmResult
+{
+public:
+	AlgorithmResult (const T &value): _result(T{value}) {}
+	AlgorithmResult (const Error &error): _result(error) {}
+
+	bool success () const {
+		return std::holds_alternative<T> (_result);
+	}
+
+	T value () const {
+		return std::get<T> (_result);
+	}
+
+	Error error () const {
+		return std::get<Error> (_result);
+	}
+
+private:
+	std::variant<T, Error> _result;
+};
+#endif //  __cplusplus >= 201703L
+
 
 template<class T, class clock, class duration>
 class TimedObject

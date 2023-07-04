@@ -10,6 +10,7 @@ template<class MultiArray>
 class MultiArrayManager
 {
 	using value_type = typename MultiArray::_data_type::value_type;
+	using array_type = typename MultiArray::_data_type;
 
 	void create (std::vector<int> sizes, int dataOffset = 0);
 	int getIndex (std::vector<int> indexes);
@@ -35,11 +36,17 @@ public:
 	 * @param value
 	 */
 	void set (std::vector<int> indexes, value_type value);
+
 	/**
 	 * @brief Raw pointer to allocated memory storing data
 	 * @return
 	 */
 	value_type *data();
+	/**
+	 * @brief Stored data as std::vector
+	 */
+	array_type &array();
+
 	/**
 	 * @brief Get size at dimension i
 	 * @param i
@@ -117,6 +124,11 @@ void MultiArrayManager<MultiArray>::set(std::vector<int> indexes, value_type val
 template<class MultiArray>
 typename MultiArrayManager<MultiArray>::value_type *MultiArrayManager<MultiArray>::data() {
 	return _msg.data.data();
+}
+
+template<class MultiArray>
+typename MultiArrayManager<MultiArray>::array_type &MultiArrayManager<MultiArray>::array () {
+	return _msg.data;
 }
 
 template<class MultiArray>
