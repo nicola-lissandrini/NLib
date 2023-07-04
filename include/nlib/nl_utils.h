@@ -13,6 +13,9 @@
 #include <iomanip>
 #include <any>
 #include <variant>
+#ifdef INCLUDE_EIGEN
+#include <eigen3/Eigen/Core>
+#endif
 
 /** @file nlutils.h
  *  @author Nicola Lissandrini
@@ -57,6 +60,16 @@ std::string getFcnName (T functionAddress) {
 	dladdr (reinterpret_cast<void *>(functionAddress), &info);
 	return abi::__cxa_demangle(info.dli_sname, NULL, NULL, NULL);
 }
+
+#ifdef EIGEN_CORE_H
+template <typename Derived>
+std::string get_shape(const Eigen::EigenBase<Derived>& x)
+{
+	std::ostringstream oss;
+	oss  << "(" << x.rows() << ", " << x.cols() << ")";
+	return oss.str();
+}
+#endif
 
 /**
  * @section Shared ptr tools
