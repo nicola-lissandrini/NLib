@@ -240,6 +240,9 @@ protected:
 	R callService (const std::string &channel, const T &...value);
 
 
+	const ResourceManager &resources () const;
+	ResourceManager &resources ();
+
 private:
 	void setEnabled (ChannelId enablingChannelId);
 
@@ -858,6 +861,12 @@ Channel NlModFlow::createChannel (const std::string &name,
 {
 	Channel newChannel(_channelsSeq, name, owner, isSink, &typeid(T)...);
 
+	if (_channelNames.find (name) != _channelNames.end ()) {
+		std::cout << "Module " << owner->name () << " creating channel "
+				  << name << ": already exists" << std::endl;
+		assert (false && "Channel name conflict");
+	}
+
 	_channelNames[name] = newChannel;
 	_connections.push_back ({});
 	_channelsSeq++;
@@ -889,6 +898,9 @@ inline void NlModFlow::initDebugConfiguration () {
 	_debug.filterExcludeModules = _nlParams.get<std::string, std::vector> ("mod_flow/debug/exclude_modules", std::vector<std::string> ());
 
 }
+
+inline const ResourceManager &NlModule::resources () const  { return _modFlow->_resources; }
+inline ResourceManager &NlModule::resources ()  { return _modFlow->_resources; }
 
 template<typename ...T>
 Channel NlModule::requireSink (const std::string &sinkName)
