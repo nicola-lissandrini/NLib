@@ -254,27 +254,47 @@ std::shared_ptr<T> ResourceManager::get (const std::string &name) {
 	return std::any_cast<std::shared_ptr<T>> (_resources[name]);
 }
 
-template<typename T, typename Error>
+template<typename T, typename Status, Status ...defaultValue>
 class AlgorithmResult
 {
+	static_assert (sizeof ...(defaultValue) <= 1, "defaultValue must be either 0 or 1 element");
+
 public:
-	AlgorithmResult (const T &value): _result(T{value}) {}
-	AlgorithmResult (const Error &error): _result(error) {}
+	AlgorithmResult (const T &value): _result(value) { }
+	AlgorithmResult (const Status &error): _result(error) {}
+	AlgorithmResult () = delete;  // The default initialization of std::variant allocates an object of type T, we don't want that
 
 	bool success () const {
 		return std::holds_alternative<T> (_result);
+	}
+
+	operator bool () const {
+		return success ();
 	}
 
 	T value () const {
 		return std::get<T> (_result);
 	}
 
-	Error error () const {
-		return std::get<Error> (_result);
+	Status status () const {
+		if (success() && hasDefault ())
+			return defaultStatus();
+
+		return std::get<Status> (_result);
 	}
 
 private:
-	std::variant<T, Error> _result;
+	constexpr bool hasDefault () const {
+		return sizeof ...(defaultValue) == 1;
+	}
+
+	constexpr Status defaultStatus () const {
+		return std::get<0> (_defaultValue);
+	}
+
+private:
+	std::variant<T, Status> _result;
+	constexpr static auto _defaultValue = std::tuple (defaultValue...);
 };
 #endif //  __cplusplus >= 201703L
 
