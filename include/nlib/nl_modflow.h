@@ -1019,7 +1019,7 @@ Event::Ptr NlModFlow::prepareEmit(const Channel &channel,
 	Event::Ptr event;
 
 		// This is the case for a source call
-	if (dynamic_cast<const NlSources *> (caller) != nullptr)
+	if (lastEvent == nullptr)
 		event = std::make_shared<Event> (caller, &channel);
 	else
 		event = std::make_shared<Event> (lastEvent, caller, &channel);

@@ -1,6 +1,7 @@
 #ifndef NL_UTILS_H
 #define NL_UTILS_H
 
+#include <cstring>
 #include <iostream>
 #include <cmath>
 #include <chrono>
@@ -12,6 +13,7 @@
 #include <dlfcn.h>
 #include <iomanip>
 #include <any>
+#include <list>
 #include <variant>
 #ifdef INCLUDE_EIGEN
 #include <eigen3/Eigen/Core>
@@ -84,21 +86,44 @@ std::string get_shape(const Eigen::EigenBase<Derived>& x)
 /// @brief Define base handle for inherited params. To be protected
 #define NLIB_PARAMS_BASE  \
 template<class _DerivedParams>\
-const _DerivedParams &paramsDerived () const {\
-	return *std::dynamic_pointer_cast<_DerivedParams> (_params);\
+	const _DerivedParams &paramsDerived () const {\
+		return *std::dynamic_pointer_cast<_DerivedParams> (_params);\
 }
 /// @brief Automatic set params. To be public
 #define NLIB_PARAMS_SET \
 template<class _DerivedParams> \
-void setParams (const _DerivedParams &params) {\
-	_params = std::make_shared<_DerivedParams> (params);\
+	void setParams (const _DerivedParams &params) {\
+		_params = std::make_shared<_DerivedParams> (params);\
 }
 
 /// @brief Define specific handle for inherited params, shorthand for Base::params<Derived::Params>
 #define NLIB_PARAMS_INHERIT(Base) \
 const Params &params () const { \
-	return Base::paramsDerived<Params> (); \
+		return Base::paramsDerived<Params> (); \
 }
+
+#if __cplusplus >= 201703L
+namespace traits {
+
+template<typename T, template<typename> class Expression, typename = void>
+struct is_valid_expression : std::false_type { };
+
+template<typename T, template<typename> class Expression>
+struct is_valid_expression<T, Expression, std::void_t<Expression<T>>> : std::true_type { };
+
+#define DEFINE_EXPRESSION_CHECKER(name, expression) \
+template<typename T> \
+	using name##_expression = expression; \
+	\
+	template<typename T> \
+	inline constexpr bool name = is_valid_expression<T, name##_expression>::value;
+
+DEFINE_EXPRESSION_CHECKER(has_iterator, typename T::iterator)
+DEFINE_EXPRESSION_CHECKER(overloads_ostream_op, decltype(std::declval<std::ostream> () << std::declval<T> ()))
+
+} // namespaec traits
+#endif //  __cplusplus >= 201703L
+
 
 /**
  * @defgroup gpt General purpose tools
@@ -119,8 +144,8 @@ struct RangeBase {
 template<typename T>
 int RangeBase<T>::count() const {
 	return step.has_value () ?
-	    static_cast<int> (floor ((max - min) / *step)) :
-			 -1;
+			   static_cast<int> (floor ((max - min) / *step)) :
+			   -1;
 }
 
 template<typename T>
@@ -146,8 +171,8 @@ class Flag
 
 public:
 	explicit Flag (bool _value = false, bool _fixed = false):
-		 value(_value),
-		 fixed(_fixed)
+		  value(_value),
+		  fixed(_fixed)
 	{}
 
 	bool get () const {
@@ -169,7 +194,7 @@ class ReadyFlags
 
 public:
 	explicit ReadyFlags ():
-		 updated(false)
+		  updated(false)
 	{
 	}
 
@@ -253,8 +278,7 @@ std::shared_ptr<T> ResourceManager::get (const std::string &name) {
 
 	return std::any_cast<std::shared_ptr<T>> (_resources[name]);
 }
-
-template<typename T, typename Status, Status ...defaultValue>
+template<typename T, typename Status, const char * const * strings = nullptr, Status ...defaultValue>
 class AlgorithmResult
 {
 	static_assert (sizeof ...(defaultValue) <= 1, "defaultValue must be either 0 or 1 element");
@@ -262,7 +286,7 @@ class AlgorithmResult
 public:
 	AlgorithmResult (const T &value): _result(value) { }
 	AlgorithmResult (const Status &error): _result(error) {}
-	AlgorithmResult () = delete;  // The default initialization of std::variant allocates an object of type T, we don't want that
+	AlgorithmResult (): _result(Status()) {} // if the result needs to be default constructed, we prefer initializing to Status rather than T, which is more likely to be more expensive to construct
 
 	bool success () const {
 		return std::holds_alternative<T> (_result);
@@ -276,26 +300,342 @@ public:
 		return std::get<T> (_result);
 	}
 
-	Status status () const {
-		if (success() && hasDefault ())
-			return defaultStatus();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
 
-		return std::get<Status> (_result);
+	Status status () const {
+		if (success()) {
+			if constexpr (hasDefaultValue())
+				return std::get<0> (_defaultValue);
+		}  else
+			return std::get<Status> (_result);
+	}
+#pragma GCC diagnostic pop
+
+	std::string toString () const {
+		std::stringstream ss;
+
+		if (success ()) {
+			ss << value ();
+
+			if constexpr (hasDefaultValue ()) {
+				ss << " (status: ";
+				if (_strings != nullptr)
+					ss << _strings[static_cast<int> (status())];
+				else
+					ss << static_cast<int> (status());
+				ss << ")";
+			}
+		} else {
+			ss << "Status: ";
+			if (_strings != nullptr)
+				ss << _strings[static_cast<int> (status())];
+			else
+				ss << static_cast<int> (status());
+		}
+
+		return ss.str();
 	}
 
 private:
-	constexpr bool hasDefault () const {
+	constexpr static bool hasDefaultValue () {
 		return sizeof ...(defaultValue) == 1;
-	}
-
-	constexpr Status defaultStatus () const {
-		return std::get<0> (_defaultValue);
 	}
 
 private:
 	std::variant<T, Status> _result;
+	constexpr static const char * const *_strings = strings;
 	constexpr static auto _defaultValue = std::tuple (defaultValue...);
 };
+
+template<typename T, typename Status,const char * const * strings = nullptr, Status ...defaultValue>
+std::ostream &operator << (std::ostream &os, const AlgorithmResult<T,Status,strings, defaultValue...> &ar) {
+	os << ar.toString ();
+	return os;
+}
+
+template<typename T>
+class IteratorRange
+{
+	static_assert (traits::has_iterator<T>, "No nested type iterator defined in template parameter type");
+
+	using iterator = typename T::iterator;
+
+	iterator _begin, _end;
+
+public:
+	IteratorRange (const iterator &begin, const iterator &end):
+		  _begin(begin), _end(end) { }
+	IteratorRange () = delete;
+
+	typename T::iterator begin () const { return _begin; }
+	typename T::iterator end () const { return _end; }
+	bool empty () { return _begin == _end; }
+};
+
+template<typename DataType, typename LabelType = std::monostate>
+class TreeNode
+{
+	using Children = std::list<TreeNode *>;
+
+	// Only allow creating standalone root nodes
+	TreeNode (DataType &&data, const LabelType &label, TreeNode *parent);
+	TreeNode (const DataType &data, const LabelType &label, TreeNode *parent);
+
+public:
+	// WARNING: this is the constructor that moves the ownership of the data
+	// to the node itself, to call it you need to "new TreeNode (std::move(data))"
+	TreeNode (DataType &&data, const LabelType &label = LabelType()):
+		  TreeNode (std::move(data), label, nullptr)
+	{}
+
+	// WARNING: this triggers a deep copy of the data
+	TreeNode (const DataType &data,  const LabelType &label = LabelType()):
+		  TreeNode (data, label, nullptr)
+	{}
+
+	// To call this method: node->addChild (move (data),...)
+	TreeNode *addChild (DataType &&data, const LabelType &label = LabelType());
+	// This performs a deep copy
+	TreeNode *addChild (const DataType &data, const LabelType &label = LabelType());
+	TreeNode *nthAncestor (int n);
+	TreeNode *nthDescendant (int n);
+	TreeNode *parent () { return _parent; }
+	const LabelType &label () const { return _label; }
+	LabelType &label () { return _label; }
+	int childrenCount () const { return _childrenCount; }
+	int depth () const { return _depth; }
+	bool isRoot () const { return _parent == nullptr; }
+	bool isLeaf () const { return _childrenCount == 0; }
+
+	IteratorRange<Children> children () { return {_children.begin (), _children.end ()}; }
+
+	~TreeNode ();
+
+	const DataType &data () const { return _data; }
+	DataType &data () { return _data; }
+
+private:
+	TreeNode *_parent;
+	Children _children;
+	DataType _data;
+	LabelType _label;
+	int _childrenCount;
+	int _depth;
+};
+
+template<typename DataType, typename LabelType>
+TreeNode<DataType, LabelType>::TreeNode (DataType &&data, const LabelType &label, TreeNode *parent):
+	  _data(std::move (data)),
+	  _label(label),
+	  _parent(parent),
+	  _childrenCount(0)
+{
+	if (isRoot ())
+		_depth = 0;
+	else
+		_depth = parent->depth () + 1;
+}
+
+template<typename DataType, typename LabelType>
+TreeNode<DataType, LabelType>::TreeNode (const DataType &data,  const LabelType &label, TreeNode *parent):
+	  TreeNode (DataType {data}, label, parent)
+{}
+
+template<typename DataType, typename LabelType>
+TreeNode<DataType, LabelType>::~TreeNode () {
+	for (TreeNode *child : _children)
+		delete child;
+}
+
+template<typename DataType, typename LabelType>
+TreeNode<DataType, LabelType> *TreeNode<DataType, LabelType>::addChild (DataType &&data,  const LabelType &label) {
+	_children.push_back (new TreeNode (std::move (data), label, this));
+	_childrenCount++;
+	return _children.back ();
+}
+
+template<typename DataType, typename LabelType>
+TreeNode<DataType, LabelType> *TreeNode<DataType, LabelType>::addChild (const DataType &data,  const LabelType &label) {
+	return addChild (DataType {data}, label);
+}
+
+template<typename DataType, typename LabelType>
+TreeNode<DataType, LabelType> *TreeNode<DataType, LabelType>::nthAncestor (int n) {
+	TreeNode *ret = this;
+
+	while (n > 0) {
+		if (ret == nullptr)
+			return nullptr;
+		ret = ret->parent ();
+		n--;
+	}
+
+	return ret;
+}
+
+
+// Find descendant for nodes that only have 1 child in the whole descendant line
+template<typename DataType, typename LabelType>
+TreeNode<DataType, LabelType> *TreeNode<DataType, LabelType>::nthDescendant (int n) {
+	TreeNode *ret = this;
+
+	while (n > 0) {
+		if (ret->childrenCount () != 1)
+			return nullptr;
+		ret = *ret->children ().begin ();
+		n--;
+	}
+
+	return ret;
+}
+
+template<typename DataType, typename LabelType = std::monostate, typename ExtraDataType = std::monostate>
+class Tree
+{
+public:
+	using Node = TreeNode<DataType, LabelType>;
+	template<typename ...Args>
+	using VisitLambda = std::function<void(Node *, Args ...)>;
+
+	enum Algorithm {
+		DEPTH_FIRST_PREORDER,
+		DEPTH_FIRST_POSTORDER,
+		BREADTH_FIRST
+	};
+
+	Tree (DataType &&rootValue, const LabelType &label = LabelType()):
+		  _root(new Node (std::move (rootValue), label))
+	{}
+
+	Tree (const DataType &rootValue, const LabelType &label = LabelType()):
+		  Tree(DataType{rootValue}, label)
+	{}
+
+	Node *root () const { return _root; }
+
+	~Tree () { delete _root; }
+
+
+	template<typename ...Args>
+	void traverse (Algorithm algorithm, const VisitLambda<Args...> &visit, Args ...args) {
+		traverse<Args...> (algorithm, root(), visit, args...);
+	}
+
+	template<typename Fcn = std::function<DataType(Node *)>>
+	std::string toJson (const Fcn &printData = [](Node *node) {return node->data ();}) const {
+		return toJson (root (), printData);
+	}
+
+	template<typename U = DataType>
+	std::string toGraphviz (const std::function<U(Node *)> printNode = [](Node *node) -> DataType {return node->data(); }) {
+		VisitLambda<std::stringstream &> graphvizVisit = [printNode] (Node *node, std::stringstream &str) {
+			if (!node->isRoot ())
+				str << printNode (node->parent()) << " -> " << printNode (node) << "; \n";
+		};
+
+		std::stringstream str;
+
+		str << "digraph Tree {\n";
+
+		traverse<std::stringstream &> (DEPTH_FIRST_PREORDER, graphvizVisit, str);
+
+		str << "}";
+
+		return str.str ();
+	}
+
+	template<typename U = ExtraDataType>
+	std::enable_if_t<!std::is_same_v<U, std::monostate>, const ExtraDataType &>
+	extraData () const {
+		return _extraData;
+	}
+
+	template<typename U = ExtraDataType>
+	std::enable_if_t<!std::is_same_v<U, std::monostate>, ExtraDataType &>
+	extraData () {
+		return _extraData;
+	}
+
+
+private:
+	template<typename ...Args>
+	void traverse (Algorithm algorithm, Node *node, const VisitLambda<Args...> &visit, Args ...args) {
+		switch (algorithm) {
+		case DEPTH_FIRST_PREORDER:
+			depthFirstPreorder<Args...> (node, visit, args...);
+			break;
+		case DEPTH_FIRST_POSTORDER:
+			depthFirstPostorder<Args...> (node, visit, args...);
+			break;
+		case BREADTH_FIRST:
+			breadthFirst<Args...> (node, visit, args...);
+			break;
+		default:
+			break;
+		}
+	}
+
+	template<typename ...Args>
+	static void depthFirstPreorder (Node *node, const VisitLambda<Args...> &visit, Args ...args) {
+		visit (node, args...);
+
+		for (Node *child : node->children ())
+			depthFirstPreorder<Args...> (child, visit, args...);
+	}
+
+	template<typename ...Args>
+	static void depthFirstPostorder (Node *node, const VisitLambda<Args...> &visit, Args ...args) {
+		for (Node *child : node->children ())
+			depthFirstPostorder<Args...> (child, visit, args...);
+
+		visit (node, args...);
+	}
+
+	template<typename ...Args>
+	static void breadthFirst (Node *node, const VisitLambda<Args...> &visit, Args ...args) {
+		for (Node *child : node->children ())
+			visit (child, args...);
+
+		for (Node *child : node->children ())
+			breadthFirst<Args...> (child, visit, args...);
+
+	}
+
+	template<typename Fcn>
+	std::string toJson (Node *node, const Fcn &printData) const {
+		std::stringstream ss;
+
+		ss << "{";
+
+		if constexpr (!std::is_same_v<LabelType, std::monostate>)
+			ss << "\"label\": " << node->label () << ", ";
+
+		ss << "\"data\": " << printData (node);
+
+		if (!node->isLeaf ()) {
+			ss << ", \"children\": [";
+
+			int count = 0;
+			for (Node *child : node->children ()) {
+				ss << toJson (child, printData);
+				if (count < node->childrenCount () - 1)
+					ss << ", ";
+				count++;
+			}
+			ss << "]";
+		}
+		ss << "}";
+		return ss.str ();
+	}
+
+private:
+	ExtraDataType _extraData;
+	Node *_root;
+};
+
+
+
 #endif //  __cplusplus >= 201703L
 
 
@@ -307,13 +647,13 @@ public:
 
 	template<typename other_clock, typename ...Args>
 	TimedObject (const std::chrono::time_point<other_clock> &time, Args ...args):
-		 _obj(args ...),
-		 _time(std::chrono::time_point_cast<duration> (time))
+		  _obj(args ...),
+		  _time(std::chrono::time_point_cast<duration> (time))
 	{}
 
 	TimedObject () = default;
 
-	   // Avoid implicit direct conversion from T to Timed<T>
+	// Avoid implicit direct conversion from T to Timed<T>
 	TimedObject (const T &other) = delete;
 
 	T &obj() {
@@ -335,12 +675,12 @@ public:
 
 #define TIMED_TIMED_COMPARISON(op) \
 	bool operator op (const TimedObject<T, clock, duration> &rhs) const { \
-		    return time () op rhs.time (); \
+			return time () op rhs.time (); \
 	}
 
 #define TIMED_TIME_COMPARISON(op) \
 	bool operator op (const Time &rhs) const { \
-		    return time () op rhs; \
+			return time () op rhs; \
 	}
 
 	TIMED_TIMED_COMPARISON(<)
@@ -373,8 +713,8 @@ std::string printTime (const time_point &time) {
 	char buffer[sizeof "9999-12-31 23:59:59.999"];
 
 	std::snprintf(buffer + std::strftime(buffer, sizeof buffer - 3,
-								    "%F %T.", std::localtime(&coarse)),
-				4, "%03lu", fine.time_since_epoch().count() % 1000);
+										 "%F %T.", std::localtime(&coarse)),
+				  4, "%03lu", fine.time_since_epoch().count() % 1000);
 	return buffer;
 }
 
@@ -386,6 +726,15 @@ std::ostream &operator << (std::ostream &os, const TimedObject<T, clock, duratio
 
 /// @brief [0,2pi) to [-pi, pi)
 #define CONVERT_RANGE(v) (fmod ((v)+M_PI,2*M_PI)-M_PI)
+
+inline void quickGDB (int argc, char *argv[]) {
+	if (argc == 1)
+		return;
+	if (std::strcmp(argv[1], "true") == 0) {
+		std::cout << "Waiting for gdb to attach..." << std::endl;
+		WAIT_GDB;
+	}
+}
 
 /// @defgroup pt Profiling tools
 
@@ -415,12 +764,12 @@ inline std::string secView (double x) {
 /// @ingroup pt
 #define PROFILE_N_EN(taken, lambda, ndiv, enable) {\
 std::stringstream ID;\
-    ID << __PRETTY_FUNCTION__ << ":" << __LINE__-2;\
-    auto _start = std::chrono::steady_clock::now ();\
-    lambda();\
-    auto _end = std::chrono::steady_clock::now ();\
+	ID << __PRETTY_FUNCTION__ << ":" << __LINE__-2;\
+	auto _start = std::chrono::steady_clock::now ();\
+	lambda();\
+	auto _end = std::chrono::steady_clock::now ();\
 	taken = double(std::chrono::duration_cast<std::chrono::microseconds> (_end - _start).count ())/1e6;\
-    if (enable) {\
+	if (enable) {\
 		if (ndiv == 1) std::cout << ID.str() << ": taken: " << secView(taken) << std::endl;\
 		else std::cout << ID.str() << ": total: " << secView(taken) << " each: " << secView(taken/double(ndiv)) << " over " << ndiv << " trials" << std::endl; }}
 
@@ -431,8 +780,59 @@ std::stringstream ID;\
 #endif
 #define PROFILE(taken, lambda) PROFILE_N(taken,lambda,1)
 
+template<bool _autostop, bool _output>
+class Profiler
+{
+public:
+	Profiler (const std::string &id = ""):
+		  _id(id)
+	{
+		start ();
+	}
+
+	void start () {
+		_start = now();
+	}
+
+	double tick (int n = 1) {
+		auto end = now ();
+		double taken = static_cast<double> (std::chrono::duration_cast<std::chrono::nanoseconds> (end - _start).count()*1e-9);
+
+		if constexpr (_output)
+			dump(taken, n);
+		_start = now ();
+		return taken;
+	}
+
+	~Profiler() {
+		if constexpr (_autostop && _output) {
+			tick ();
+		}
+	}
+
+private:
+	auto now () const {
+		return std::chrono::steady_clock::now ();
+	}
+	void dump (double taken, int n = 1) {
+		std::string pre = (_id.empty() ? std::string ("T") : _id + std::string (": t"));
+		if (n == 1)
+			std::cout << pre << "aken: " << secView(taken) << std::endl;
+		else
+			std::cout << pre << "otal: " << secView(taken) << " each " << secView (taken / double(n)) << " over " << n << " trials" << std::endl;
+	}
+
+private:
+	std::string _id;
+	std::chrono::time_point<std::chrono::steady_clock> _start;
+};
+
+using Autoprof = Profiler<true, true>;
+using Prof = Profiler<false, true>;
 
 
-}
+
+
+} // namespace nlib
 
 #endif // NL_UTILS_H

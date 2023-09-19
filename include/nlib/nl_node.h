@@ -82,8 +82,8 @@ protected:
 
 protected:
 	NlModFlow::Ptr _nlModFlow;
-	std::map<std::string, ros::Publisher> _publishers;
-	std::map<std::string, ros::Subscriber> _subscribers;
+	std::unordered_map<std::string, ros::Publisher> _publishers;
+	std::unordered_map<std::string, ros::Subscriber> _subscribers;
 	ros::Timer _clock;
 	std::string _name;
 	bool _synchronous;
