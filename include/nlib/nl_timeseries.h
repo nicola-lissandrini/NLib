@@ -96,6 +96,20 @@ public:
 	using const_iterator = typename DataType::const_iterator;
 	using Neighbors = std::pair<std::optional<Sample>, std::optional<Sample>>;
 
+	enum class ResultStatus {
+		SUCCESS,
+		TIME_OUT_OF_BOUNDS,
+		NO_START_TIME
+	};
+
+	constexpr static const char *statusStrings[] = {
+		"SUCCESS,
+		"TIME_OUT_OF_BOUNDS",
+		"NO_START_TIME"
+	};
+
+	using Result = nlib::AlgorithmResult<T, ResultStatus, statusStrings>;
+
 
 	iterator begin () { return _timeseries.begin (); }
 	iterator end () { return _timeseries.end (); }
@@ -123,11 +137,11 @@ public:
 	}
 
 
-	T operator () (const Duration &t) 	{
+	Result operator () (const Duration &t) 	{
 		return at (t);
 	}
 
-	T operator () (const Time &t) {
+	Result operator () (const Time &t) {
 		return at(t);
 	}
 
@@ -140,17 +154,21 @@ public:
 	}
 
 	template<typename OtherTime>
-	T at (const OtherTime &t) const {
-		assert (_startTime.has_value () && "Must set starting time to access with time");
+	Result at (const OtherTime &t) const {
+		if (!_startTime.has_value ())
+			return ResultStatus::NO_START_TIME;
 
 		return at (std::chrono::time_point_cast<Duration> (t) - *_startTime);
 	}
 
-	T at (const Duration &t) const
+	Result at (const Duration &t) const
 	{
 		auto [before, after] = neighbors (t);
 
-		assert (before.has_value () && after.has_value () && "Supplied time out of the timeseries limits");
+		if (!before.has_value () || !after.has_value ()) {
+			// Supplied time out of the timeseries limits
+			return ResultStatus::TIME_OUT_OF_BOUNDS;
+		}
 
 		return interpolation (*before, *after, t);
 	}
