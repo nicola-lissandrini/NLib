@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="test"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\opt\;CMake Files\..\..\..\..\..\..\..\opt\Qt\;CMake Files\..\..\..\..\..\..\..\opt\Qt\Tools\;CMake Files\..\..\..\..\..\..\..\opt\Qt\Tools\QtCreator\;CMake Files\..\..\..\..\..\..\..\opt\Qt\Tools\QtCreator\share\;CMake Files\..\..\..\..\..\..\..\opt\Qt\Tools\QtCreator\share\qtcreator\;CMake Files\..\..\..\..\..\..\..\opt\Qt\Tools\QtCreator\share\qtcreator\package-manager\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/nicola/ros/napvig3_ws/src/nlib/build-src-Desktop-Debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/ninja -v all"/>
+					<CompileFile command="/usr/bin/ninja -v &quot;$file&quot;"/>
+					<Clean command="/usr/bin/ninja -v clean"/>
+					<DistClean command="/usr/bin/ninja -v clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/nicola/ros/napvig3_ws/src/nlib/build-src-Desktop-Debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/ninja -v rebuild_cache"/>
+					<CompileFile command="/usr/bin/ninja -v &quot;$file&quot;"/>
+					<Clean command="/usr/bin/ninja -v clean"/>
+					<DistClean command="/usr/bin/ninja -v clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/nicola/ros/napvig3_ws/src/nlib/build-src-Desktop-Debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/ninja -v edit_cache"/>
+					<CompileFile command="/usr/bin/ninja -v &quot;$file&quot;"/>
+					<Clean command="/usr/bin/ninja -v clean"/>
+					<DistClean command="/usr/bin/ninja -v clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test_timeseries">
+				<Option output="/home/nicola/ros/napvig3_ws/src/nlib/build-src-Desktop-Debug/test_timeseries" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/nicola/ros/napvig3_ws/src/nlib/build-src-Desktop-Debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/ninja -v test_timeseries"/>
+					<CompileFile command="/usr/bin/ninja -v &quot;$file&quot;"/>
+					<Clean command="/usr/bin/ninja -v clean"/>
+					<DistClean command="/usr/bin/ninja -v clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test_timeseries/fast">
+				<Option output="/home/nicola/ros/napvig3_ws/src/nlib/build-src-Desktop-Debug/test_timeseries" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/nicola/ros/napvig3_ws/src/nlib/build-src-Desktop-Debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/c++/10"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
+					<Add directory="/usr/include/c++/10/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/10/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/ninja -v test_timeseries/fast"/>
+					<CompileFile command="/usr/bin/ninja -v &quot;$file&quot;"/>
+					<Clean command="/usr/bin/ninja -v clean"/>
+					<DistClean command="/usr/bin/ninja -v clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/nicola/ros/napvig3_ws/src/nlib/src/test_timeseries.cpp">
+			<Option target="test_timeseries"/>
+		</Unit>
+		<Unit filename="/home/nicola/ros/napvig3_ws/src/nlib/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/nicola/ros/napvig3_ws/src/nlib/src/../../../../../../../opt/Qt/Tools/QtCreator/share/qtcreator/package-manager/auto-setup.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\opt\Qt\Tools\QtCreator\share\qtcreator\package-manager\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
