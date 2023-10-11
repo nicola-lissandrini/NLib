@@ -103,7 +103,7 @@ public:
 	};
 
 	constexpr static const char *statusStrings[] = {
-		"SUCCESS,
+		"SUCCESS",
 		"TIME_OUT_OF_BOUNDS",
 		"NO_START_TIME"
 	};
@@ -158,7 +158,28 @@ public:
 		if (!_startTime.has_value ())
 			return ResultStatus::NO_START_TIME;
 
-		return at (std::chrono::time_point_cast<Duration> (t) - *_startTime);
+		return at (elapsed (t));
+	}
+
+	template<typename OtherTime>
+	Duration elapsed (const OtherTime &t) const {
+		if (_startTime.has_value ())
+			return (std::chrono::time_point_cast<Duration> (t) - *_startTime);
+		else
+			return std::chrono::time_point_cast<Duration> (t).time_since_epoch ();
+	}
+
+	template<typename OtherTime>
+	Result next (const OtherTime &t) const {
+		if (!_startTime.has_value ())
+			return ResultStatus::NO_START_TIME;
+
+		Neighbors n = neighbors (elapsed (t));
+
+		if (n.second.has_value ())
+			return n.second.value ().obj ();
+		else
+			return ResultStatus::TIME_OUT_OF_BOUNDS;
 	}
 
 	Result at (const Duration &t) const
