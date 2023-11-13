@@ -638,6 +638,43 @@ private:
 
 #endif //  __cplusplus >= 201703L
 
+template<class Duration = std::chrono::milliseconds, class Clock = std::chrono::steady_clock>
+class TimeHysteresis
+{
+	using Time = typename Clock::time_point;
+public:
+	TimeHysteresis (int lockTime, int releaseTime):
+		  _lockDuration(lockTime),
+		  _releaseDuration(releaseTime)
+	{}
+
+	void trigger ();
+
+	bool isLocked () const { return _locked; }
+
+private:
+	Duration _lockDuration;
+	Duration _releaseDuration;
+	Time _transitionTime;
+	bool _locked;
+};
+
+template<class Duration, class Clock>
+void TimeHysteresis<Duration, Clock>::trigger()
+{
+	auto currentTime = Clock::now ();
+	auto elapsed = currentTime - _transitionTime;
+
+	// Transition from released to locked
+	if (!_locked && elapsed >= _releaseDuration) {
+		_locked = true;
+		_transitionTime = currentTime;
+	} else if (_locked && elapsed >= _lockDuration) {
+		_locked = false;
+		_transitionTime = currentTime;
+	}
+}
+
 
 template<class T, class clock, class duration>
 class TimedObject
