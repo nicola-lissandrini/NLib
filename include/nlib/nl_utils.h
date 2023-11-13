@@ -642,7 +642,12 @@ template<class Duration = std::chrono::milliseconds, class Clock = std::chrono::
 class TimeHysteresis
 {
 	using Time = typename Clock::time_point;
+
 public:
+	struct Params {
+
+	};
+
 	TimeHysteresis (int lockTime, int releaseTime):
 		  _lockDuration(lockTime),
 		  _releaseDuration(releaseTime)
@@ -653,8 +658,6 @@ public:
 	bool isLocked () const { return _locked; }
 
 private:
-	Duration _lockDuration;
-	Duration _releaseDuration;
 	Time _transitionTime;
 	bool _locked;
 };
