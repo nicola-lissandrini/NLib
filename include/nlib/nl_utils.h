@@ -645,19 +645,20 @@ class TimeHysteresis
 
 public:
 	struct Params {
-
+		Duration lockDuration;
+		Duration releaseDuration;
 	};
 
-	TimeHysteresis (int lockTime, int releaseTime):
-		  _lockDuration(lockTime),
-		  _releaseDuration(releaseTime)
+	TimeHysteresis ()
 	{}
 
+	void setParams (const Params &params) { _params = params; }
 	void trigger ();
 
 	bool isLocked () const { return _locked; }
 
 private:
+	Params _params;
 	Time _transitionTime;
 	bool _locked;
 };
@@ -669,10 +670,10 @@ void TimeHysteresis<Duration, Clock>::trigger()
 	auto elapsed = currentTime - _transitionTime;
 
 	// Transition from released to locked
-	if (!_locked && elapsed >= _releaseDuration) {
+	if (!_locked && elapsed >= _params.releaseDuration) {
 		_locked = true;
 		_transitionTime = currentTime;
-	} else if (_locked && elapsed >= _lockDuration) {
+	} else if (_locked && elapsed >= _params.lockDuration) {
 		_locked = false;
 		_transitionTime = currentTime;
 	}
