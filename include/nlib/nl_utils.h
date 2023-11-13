@@ -638,12 +638,15 @@ private:
 
 #endif //  __cplusplus >= 201703L
 
-template<class Duration = std::chrono::milliseconds, class Clock = std::chrono::steady_clock>
+template<class _Duration = std::chrono::milliseconds, class _Clock = std::chrono::steady_clock>
 class TimeHysteresis
 {
-	using Time = typename Clock::time_point;
+	using Time = typename _Clock::time_point;
 
 public:
+	using Duration = _Duration;
+	using Clock = _Clock;
+
 	struct Params {
 		Duration lockDuration;
 		Duration releaseDuration;
